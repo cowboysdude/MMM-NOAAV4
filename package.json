@@ -1,0 +1,29 @@
+{
+  "name": "mmm-noaa3",
+  "version": "4.0.0",
+  "description": "Weather, UV, air quality, moon phase and NWS alerts for MagicMirror\u00b2. Maintained by cowboysdude.",
+  "main": "MMM-NOAAV4.js",
+  "dependencies": {},
+  "scripts": {
+    "test": "NODE_PATH=test/stubs/node_modules node --test test/*.test.js"
+  },
+  "author": "cowboysdude",
+  "license": "ISC",
+  "directories": {
+    "example": "examples"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cowboysdude/MMM-NOAAV4.git"
+  },
+  "keywords": [
+    "MagicMirror2"
+  ],
+  "bugs": {
+    "url": "https://github.com/cowboysdude/MMM-NOAAV4/issues"
+  },
+  "homepage": "https://github.com/cowboysdude/MMM-NOAAV4#readme",
+  "engines": {
+    "node": ">=22"
+  }
+}
