@@ -1,20 +1,24 @@
 // Realistic sample API responses (shapes follow each service's documented format).
 const now = Math.floor(Date.now() / 1000);
 const day0 = now - (now % 86400);
+const OM_OFFSET = -18000; // Open-Meteo sample location is UTC-5
+const localMidnight = now - ((now + OM_OFFSET) % 86400);
 
 module.exports = {
 	openmeteo: {
-		utc_offset_seconds: -18000,
+		utc_offset_seconds: OM_OFFSET,
 		current: { time: now, temperature_2m: 10, relative_humidity_2m: 65, weather_code: 2, pressure_msl: 1015.2, wind_speed_10m: 16.1, is_day: 1, visibility: 16093, uv_index: 3.4 },
+		// Like the real API with past_days=1 and timeformat=unixtime: times are LOCAL midnights,
+		// and slot 0 is YESTERDAY. Yesterday's values are deliberately different so a mix-up shows.
 		daily: {
-			time: [day0, day0 + 86400, day0 + 2 * 86400, day0 + 3 * 86400, day0 + 4 * 86400],
-			weather_code: [2, 61, 71, 0, 95],
-			temperature_2m_max: [12, 9, 1, 5, 20],
-			temperature_2m_min: [3, 4, -4, -2, 10],
-			sunrise: [now - 4 * 3600, 0, 0, 0, 0],
-			sunset: [now + 5 * 3600, 0, 0, 0, 0],
-			daylight_duration: [35100.5, 0, 0, 0, 0],
-			uv_index_max: [3.9, 2, 1, 3, 5]
+			time: [-1, 0, 1, 2, 3, 4, 5].map((k) => localMidnight + k * 86400),
+			weather_code: [95, 2, 61, 71, 0, 95, 3],
+			temperature_2m_max: [30, 12, 9, 1, 5, 20, 8],
+			temperature_2m_min: [25, 3, 4, -4, -2, 10, 1],
+			sunrise: [now - 28 * 3600, now - 4 * 3600, 0, 0, 0, 0, 0],
+			sunset: [now - 19 * 3600, now + 5 * 3600, 0, 0, 0, 0, 0],
+			daylight_duration: [34000, 35100.5, 0, 0, 0, 0, 0],
+			uv_index_max: [9, 3.9, 2, 1, 3, 5, 2]
 		}
 	},
 	aqi: { current: { us_aqi: 42.4 } },

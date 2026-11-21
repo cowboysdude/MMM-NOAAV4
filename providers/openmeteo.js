@@ -21,13 +21,23 @@ async function getWeather (cfg) {
 	const offset = d.utc_offset_seconds || 0;
 	const pressureTrend = trend(d.hourly);
 
-	const forecast = (day.time || []).slice(0, 6).map((t, i) => ({
+	// past_days=1 (for the pressure trend) puts YESTERDAY first in every daily list,
+	// so find today's slot by its local date instead of assuming it's slot 0.
+	const localDate = (t) => new Date((t + offset) * 1000).toISOString().slice(0, 10);
+	const todayDate = localDate(Math.floor(Date.now() / 1000));
+	let ti = (day.time || []).findIndex((t) => localDate(t) === todayDate);
+	if (ti < 0) ti = 0;
+
+	const forecast = (day.time || []).slice(ti, ti + 6).map((t, k) => {
+		const i = ti + k;
+		return {
 		day: DAYS[new Date((t + offset) * 1000).getUTCDay()],
 		icon: iconFromWmo(day.weather_code[i]),
 		desc: textFromWmo(day.weather_code[i]),
 		highC: day.temperature_2m_max[i],
 		lowC: day.temperature_2m_min[i]
-	}));
+		};
+	});
 
 	return {
 		current: {
@@ -41,16 +51,16 @@ async function getWeather (cfg) {
 			windKph: c.wind_speed_10m,
 			windDeg: c.wind_direction_10m,
 			pressureTrend,
-			uv: c.uv_index !== undefined && c.uv_index !== null ? c.uv_index : (day.uv_index_max || [])[0],
+			uv: c.uv_index !== undefined && c.uv_index !== null ? c.uv_index : (day.uv_index_max || [])[ti],
 			isDay: c.is_day === 1,
 			summary: forecast[0] ? `${forecast[0].desc}` : ""
 		},
 		forecast,
-		sun: day.sunrise && day.sunrise.length
+		sun: day.sunrise && day.sunrise[ti]
 			? {
-				sunrise: new Date(day.sunrise[0] * 1000).toISOString(),
-				sunset: new Date(day.sunset[0] * 1000).toISOString(),
-				daylightSeconds: Math.round(day.daylight_duration[0])
+				sunrise: new Date(day.sunrise[ti] * 1000).toISOString(),
+				sunset: new Date(day.sunset[ti] * 1000).toISOString(),
+				daylightSeconds: Math.round(day.daylight_duration[ti])
 			}
 			: null
 	};

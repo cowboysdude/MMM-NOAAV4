@@ -428,6 +428,9 @@ npm test
 - **Live countdown to sunset** with seconds, between sunrise and sunset. At sunset it switches to
   **Night** with a moon icon, and back to the countdown at sunrise.
 - **New option:** `sun` (`false` hides the row).
+- **Fixed:** sunrise, sunset and the day/night check used *yesterday's* times, so the card (and
+  [MMM-WeatherBackgroundV4](https://github.com/cowboysdude/MMM-WeatherBackgroundV4)) showed night
+  all day. The forecast row also started a day early.
 
 ## What changed in v4.1
 

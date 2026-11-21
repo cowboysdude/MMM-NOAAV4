@@ -65,7 +65,9 @@ test("openmeteo (default, no key)", async () => {
 	checkShape(d);
 	assert.equal(d.provider, "openmeteo");
 	assert.equal(d.current.uv, 3.4);
-	assert.equal(d.sun.daylightSeconds, 35101);
+	assert.equal(d.sun.daylightSeconds, 35101, "today's daylight, not yesterday's");
+	assert.ok(Date.parse(d.sun.sunset) > Date.now(), "today's sunset (yesterday's is in the past)");
+	assert.equal(d.forecast[0].highC, 12, "forecast starts today, not yesterday");
 	assert.equal(d.alerts.length, 1, "NWS alerts attached");
 });
 
