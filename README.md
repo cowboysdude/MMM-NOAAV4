@@ -276,6 +276,8 @@ Pick the card with `css:`
 
 ![White and dark cards](examples/light-and-dark.png)
 
+Left: daytime, counting down to sunset. Right: after sunset, the countdown has switched to **Night**.
+
 Want just the top row, like a small status card? Use `forecastDays: 0`, `details: false` and
 `sun: false`.
 
