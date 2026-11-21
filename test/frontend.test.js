@@ -6,7 +6,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 class El {
-	constructor (tag) { this.tag = tag; this.children = []; this.attrs = {}; this.innerHTML = ""; this.className = ""; const self = this; this.classList = { add: (...c) => { self.className = [self.className, ...c].filter(Boolean).join(" "); } }; }
+	constructor (tag) { this.tag = tag; this.children = []; this.attrs = {}; this.innerHTML = ""; this.style = {}; this.className = ""; const self = this; this.classList = { add: (...c) => { self.className = [self.className, ...c].filter(Boolean).join(" "); } }; }
 	appendChild (c) { this.children.push(c); return c; }
 	setAttribute (k, v) { this.attrs[k] = v; }
 	get outerHTML () {
@@ -197,4 +197,13 @@ test("sun: false hides the sun row; countdown formats h:mm:ss", () => {
 	assert.doesNotMatch(m.getDom().outerHTML, /nl-sunrow/);
 	assert.equal(m.countdown((4 * 3600 + 12 * 60 + 9) * 1000), "4:12:09");
 	assert.equal(m.countdown(-5000), "0:00:00");
+});
+
+test("card is 330px wide by default; width option changes it", () => {
+	const a = load({ units: "imperial" }, {});
+	a.socketNotificationReceived("NOAA3_DATA", card);
+	assert.equal(a.getDom().style.width, "330px");
+	const b = load({ units: "imperial" }, { width: 300 });
+	b.socketNotificationReceived("NOAA3_DATA", card);
+	assert.equal(b.getDom().style.width, "300px");
 });
