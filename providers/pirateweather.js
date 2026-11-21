@@ -9,7 +9,7 @@ async function getWeather (cfg) {
 	const d = await fetchJson(`https://api.pirateweather.net/forecast/${encodeURIComponent(cfg.apiKey)}/${cfg.lat},${cfg.lon}?units=si&exclude=minutely,hourly&lang=${lang}`);
 	const c = d.currently || {};
 	const offset = (d.offset || 0) * 3600;
-	const forecast = ((d.daily && d.daily.data) || []).slice(0, 4).map((x) => ({
+	const forecast = ((d.daily && d.daily.data) || []).slice(0, 6).map((x) => ({
 		day: DAYS[new Date((x.time + offset) * 1000).getUTCDay()],
 		icon: iconFromPirate(x.icon),
 		desc: x.summary,

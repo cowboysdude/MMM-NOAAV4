@@ -1,0 +1,193 @@
+/* MMM-NOAAV4 — white card (css: "light", default) and dark card (css: "dark") */
+
+.MMM-NOAAV4 .nl {
+	width: 380px;
+	padding: 16px 18px 14px;
+	border-radius: 6px;
+	background: #fff;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+	color: #212121;
+	text-align: left;
+	font-family: "Roboto", "Segoe UI", sans-serif;
+	line-height: 1.2;
+}
+
+.MMM-NOAAV4 .nl-loading {
+	font-size: 16px;
+	color: #727272;
+}
+
+.MMM-NOAAV4 .nl-head {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.MMM-NOAAV4 .nl-icon {
+	flex: 0 0 66px;
+	height: 66px;
+}
+
+.MMM-NOAAV4 .nl-svg {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
+.MMM-NOAAV4 .nl-cond {
+	flex: 1;
+	min-width: 0;
+}
+
+.MMM-NOAAV4 .nl-desc {
+	font-size: 28px;
+	font-weight: 400;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.MMM-NOAAV4 .nl-place {
+	font-size: 14px;
+	color: #727272;
+	margin-top: 2px;
+}
+
+.MMM-NOAAV4 .nl-now {
+	text-align: right;
+}
+
+.MMM-NOAAV4 .nl-temp {
+	font-size: 30px;
+	font-weight: 400;
+	white-space: nowrap;
+}
+
+.MMM-NOAAV4 .nl-sub {
+	font-size: 13px;
+	color: #727272;
+	margin-top: 2px;
+	white-space: nowrap;
+}
+
+/* forecast row */
+.MMM-NOAAV4 .nl-fc {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 18px;
+}
+
+.MMM-NOAAV4 .nl-day {
+	flex: 1;
+	text-align: center;
+}
+
+.MMM-NOAAV4 .nl-dname {
+	font-size: 15px;
+	margin-bottom: 4px;
+}
+
+.MMM-NOAAV4 .nl-dicon {
+	width: 44px;
+	height: 44px;
+	margin: 0 auto 8px;
+}
+
+.MMM-NOAAV4 .nl-hi {
+	font-size: 16px;
+	color: #212121;
+}
+
+.MMM-NOAAV4 .nl-lo {
+	font-size: 15px;
+	color: #8a8a8a;
+	margin-top: 6px;
+}
+
+/* details row */
+.MMM-NOAAV4 .nl-details {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 16px;
+	padding-top: 12px;
+	border-top: 1px solid #e6e6e6;
+}
+
+.MMM-NOAAV4 .nl-item {
+	flex: 1;
+	text-align: center;
+	min-width: 0;
+}
+
+.MMM-NOAAV4 .nl-ilabel {
+	font-size: 12px;
+	color: #727272;
+	white-space: nowrap;
+	margin-bottom: 4px;
+}
+
+.MMM-NOAAV4 .nl-ivalue {
+	font-size: 16px;
+	color: #212121;
+	white-space: nowrap;
+}
+
+.MMM-NOAAV4 .nl-iextra {
+	font-size: 12px;
+	color: #8a8a8a;
+}
+
+/* alert line */
+.MMM-NOAAV4 .nl-alert {
+	margin-top: 14px;
+	padding: 6px 10px;
+	border-radius: 4px;
+	background: #fff4e5;
+	color: #b26a00;
+	font-size: 14px;
+	font-weight: 500;
+}
+
+.MMM-NOAAV4 .nl-alert-severe {
+	background: #fdecea;
+	color: #c62828;
+}
+
+/* ---------- dark look (css: "dark") ---------- */
+.MMM-NOAAV4 .nl-dark {
+	background: #1f2125;
+	color: #e8eaed;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.45);
+	border: 1px solid #2f3237;
+}
+
+.MMM-NOAAV4 .nl-dark.nl-loading,
+.MMM-NOAAV4 .nl-dark .nl-place,
+.MMM-NOAAV4 .nl-dark .nl-sub,
+.MMM-NOAAV4 .nl-dark .nl-ilabel {
+	color: #9aa0a6;
+}
+
+.MMM-NOAAV4 .nl-dark .nl-hi,
+.MMM-NOAAV4 .nl-dark .nl-ivalue {
+	color: #e8eaed;
+}
+
+.MMM-NOAAV4 .nl-dark .nl-lo,
+.MMM-NOAAV4 .nl-dark .nl-iextra {
+	color: #8a9097;
+}
+
+.MMM-NOAAV4 .nl-dark .nl-details {
+	border-top-color: #34373c;
+}
+
+.MMM-NOAAV4 .nl-dark .nl-alert {
+	background: rgba(255, 167, 38, 0.15);
+	color: #ffb74d;
+}
+
+.MMM-NOAAV4 .nl-dark .nl-alert-severe {
+	background: rgba(239, 83, 80, 0.18);
+	color: #ef9a9a;
+}

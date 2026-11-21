@@ -19,7 +19,7 @@ async function getWeather (cfg) {
 	]);
 	const c = (Array.isArray(cur) ? cur[0] : cur) || {};
 	const m = (o) => (o && o.Metric ? o.Metric.Value : null);
-	const forecast = ((fc && fc.DailyForecasts) || []).slice(0, 4).map((d) => ({
+	const forecast = ((fc && fc.DailyForecasts) || []).slice(0, 6).map((d) => ({
 		day: DAYS[new Date(`${d.Date.slice(0, 10)}T12:00:00Z`).getUTCDay()],
 		icon: iconFromAccu(d.Day && d.Day.Icon),
 		desc: d.Day && d.Day.IconPhrase,

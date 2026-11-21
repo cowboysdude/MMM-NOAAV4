@@ -1,5 +1,5 @@
 /* MagicMirror²
- * Module: MMM-NOAAV4 (v4 - rewritten for MagicMirror 2.3x / Node 22+)
+ * Module: MMM-NOAAV4 (v4.1 - white or dark weather card, MagicMirror 2.3x / Node 22+)
  * By cowboysdude with HUGE thanks to JimL at https://www.phphelp.com!!
  */
 Module.register("MMM-NOAAV4", {
@@ -9,25 +9,16 @@ Module.register("MMM-NOAAV4", {
 		lat: "",                    // or the old names userlat / userlon
 		lon: "",
 		zip: "",                    // AccuWeather location number (same as locationKey)
-		css: "",                    // NOAA1 | NOAA2 | NOAA3 | (anything else = NOAA4 look)
+		css: "light",               // "light" = white card | "dark" = dark card
+		title: "Home",              // name under the condition, e.g. "Home Weather"
+		forecastDays: 3,            // days in the forecast row: 0 (none) to 5
+		details: true,              // row with humidity, wind, AQI and UV Index
 		units: "",                  // "" = use the units at the top of config.js
 		alerts: true,               // show US National Weather Service alerts
-		nupdate: false,             // show "Updated: ..." line
 		updateInterval: 30 * 60 * 1000,
 		rotateInterval: 60 * 1000,  // how long each alert stays up
-		animationSpeed: 0,         // fade time in ms when the display refreshes
-		lang: "",                   // "" = use the language at the top of config.js
-
-		moon: {
-			"New Moon": "images/moon/newmoon.png",
-			"Waxing Crescent": "images/moon/waxingcrescent.png",
-			"First Quarter": "images/moon/firstquarter.png",
-			"Waxing Gibbous": "images/moon/waxinggibbous.png",
-			"Full Moon": "images/moon/fullmoon.png",
-			"Waning Gibbous": "images/moon/waninggibbous.png",
-			"Last Quarter": "images/moon/thirdquarter.png",
-			"Waning Crescent": "images/moon/waningcrescent.png"
-		}
+		animationSpeed: 0,          // fade time in ms when the display refreshes
+		lang: ""                    // "" = use the language at the top of config.js
 	},
 
 	getTranslations () {
@@ -45,8 +36,7 @@ Module.register("MMM-NOAAV4", {
 	},
 
 	getStyles () {
-		const css = { NOAA1: "css/MMM-NOAA1.css", NOAA2: "css/MMM-NOAA2.css", NOAA3: "css/MMM-NOAA3.css" };
-		return [this.file(css[this.config.css] || "css/MMM-NOAA4.css")];
+		return [this.file("css/MMM-NOAAV4.css")];
 	},
 
 	start () {
@@ -55,10 +45,7 @@ Module.register("MMM-NOAAV4", {
 		this.error = null;
 		this.activeItem = 0;
 		this.rotateTimer = null;
-		// let users override just some moon pictures without losing the rest
-		this.config.moon = { ...this.defaults.moon, ...(this.config.moon || {}) };
 		const cfg = { ...this.config, lang: this.config.lang || config.language };
-		delete cfg.moon;
 		this.sendSocketNotification("NOAA3_INIT", { identifier: this.identifier, config: cfg });
 	},
 
@@ -68,7 +55,12 @@ Module.register("MMM-NOAAV4", {
 			this.data_ = payload;
 			this.error = null;
 			const c = payload.current || {};
-			this.sendNotification("WEATHER", { icon: c.icon, sunset: payload.sun ? payload.sun.sunset : null });
+			this.sendNotification("WEATHER", {
+				icon: c.icon,
+				sunrise: payload.sun ? payload.sun.sunrise : null,
+				sunset: payload.sun ? payload.sun.sunset : null,
+				isDay: this.isDay()
+			});
 			if (!this.rotateTimer && payload.alerts && payload.alerts.length > 1) {
 				this.rotateTimer = setInterval(() => {
 					this.activeItem++;
@@ -94,9 +86,6 @@ Module.register("MMM-NOAAV4", {
 		if (c === null || c === undefined) return null;
 		return this.imperial() ? c * 9 / 5 + 32 : c;
 	},
-	timeFmt () {
-		return config.timeFormat === 12 ? "h:mm" : "HH:mm";
-	},
 	isDay () {
 		const d = this.data_;
 		if (d.sun && d.sun.sunrise && d.sun.sunset) {
@@ -107,10 +96,6 @@ Module.register("MMM-NOAAV4", {
 		const h = new Date().getHours();
 		return h > 6 && h < 18;
 	},
-	icon (name, night) {
-		const n = name || "unknown";
-		return this.file(`images/${night && n !== "unknown" ? "nt_" : ""}${n}.png`);
-	},
 	esc (s) {
 		return String(s === null || s === undefined ? "" : s)
 			.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -118,188 +103,145 @@ Module.register("MMM-NOAAV4", {
 
 	// ------------------------------------------------------------ DOM
 	getDom () {
-		const wrapper = document.createElement("div");
+		return this.getDomLight();
+	},
 
+	compass (deg) {
+		if (deg === null || deg === undefined || Number.isNaN(Number(deg))) return "";
+		const dirs = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+		return dirs[Math.round(((Number(deg) % 360) + 360) % 360 / 22.5) % 16];
+	},
+
+	aqiText (n) {
+		if (n === null || n === undefined) return "";
+		if (n <= 50) return "Good";
+		if (n <= 100) return "Moderate";
+		if (n <= 150) return "Unhealthy for some";
+		if (n <= 200) return "Unhealthy";
+		return "Very Unhealthy";
+	},
+
+	uvLevel (n) {
+		if (n <= 2) return "low";
+		if (n <= 5) return "moderate";
+		if (n <= 7) return "high";
+		return "veryhigh";
+	},
+
+	// Flat weather icons, drawn in SVG so they stay sharp at any size
+	flatIcon (name, night) {
+		const n = String(name || "unknown").replace(/^nt_/, "");
+		const sun = '<circle cx="20" cy="20" r="14" fill="#fdd835"/>';
+		const moon = '<path d="M27 6a14 14 0 1 0 7 22A12 12 0 0 1 27 6z" fill="#cfd8dc"/>';
+		const smallSun = '<circle cx="31" cy="15" r="8" fill="#fdd835"/>';
+		const smallMoon = '<path d="M33 7a8 8 0 1 0 4 13 7 7 0 0 1-4-13z" fill="#cfd8dc"/>';
+		const cloud = (fill) => `<path d="M14 36h22a8 8 0 0 0 0-16 11 11 0 0 0-21-2 9 9 0 0 0-1 18z" fill="${fill}"/>`;
+		const lightCloud = cloud("#eceff1") + '<path d="M14 36h22a8 8 0 0 0 0-16 11 11 0 0 0-21-2 9 9 0 0 0-1 18z" fill="none" stroke="#cfd8dc" stroke-width="1"/>';
+		const drops = (k) => Array.from({ length: k }, (_, i) => `<path d="M${15 + i * 7} 40l-2 5" stroke="#42a5f5" stroke-width="2.2" stroke-linecap="round"/>`).join("");
+		const flakes = (k) => Array.from({ length: k }, (_, i) => `<circle cx="${15 + i * 7}" cy="43" r="1.8" fill="#90caf9"/>`).join("");
+		const bolt = '<path d="M24 37l-4 7h4l-3 6 8-9h-4l3-4z" fill="#fdd835"/>';
+		const fogLines = '<path d="M8 40h30M12 45h26" stroke="#b0bec5" stroke-width="2.5" stroke-linecap="round"/>';
+		const windLines = '<path d="M6 16h22a5 5 0 1 0-5-5M6 24h30a5 5 0 1 1-5 5M6 32h16" fill="none" stroke="#b0bec5" stroke-width="2.6" stroke-linecap="round"/>';
+		const body = {
+			clear: night ? moon : sun, sunny: night ? moon : sun,
+			mostlysunny: (night ? smallMoon : smallSun) + lightCloud, mostlyclear: (night ? smallMoon : smallSun) + lightCloud,
+			partlycloudy: (night ? smallMoon : smallSun) + lightCloud, partlysunny: (night ? smallMoon : smallSun) + lightCloud,
+			mostlycloudy: lightCloud, cloudy: lightCloud, overcast: cloud("#cfd8dc"),
+			fog: lightCloud + fogLines, hazy: (night ? smallMoon : smallSun) + fogLines,
+			drizzle: lightCloud + drops(2), chancerain: lightCloud + drops(3), rain: cloud("#cfd8dc") + drops(4),
+			sleet: lightCloud + drops(2) + `<circle cx="29" cy="43" r="1.8" fill="#90caf9"/>`,
+			chancesleet: lightCloud + drops(2) + `<circle cx="29" cy="43" r="1.8" fill="#90caf9"/>`,
+			flurries: lightCloud + flakes(2), chanceflurries: lightCloud + flakes(2), chancesnow: lightCloud + flakes(3), snow: cloud("#cfd8dc") + flakes(4),
+			tstorms: cloud("#b0bec5") + bolt, chancetstorms: lightCloud + bolt,
+			wind: windLines, breezy: windLines
+		}[n] || lightCloud;
+		return `<svg class="nl-svg" viewBox="0 0 48 50" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+	},
+
+	// The card: white (css: "light", default) or dark (css: "dark"), like the Home Assistant weather card
+	getDomLight () {
+		const w = document.createElement("div");
+		w.className = String(this.config.css).toLowerCase() === "dark" ? "nl nl-dark" : "nl";
 		if (!this.data_) {
-			wrapper.className = this.error ? "small dimmed" : "bright small";
-			wrapper.innerHTML = this.error ? `MMM-NOAAV4: ${this.esc(this.error)}` : "Gathering your weather info..";
-			return wrapper;
+			w.classList.add("nl-loading");
+			w.innerHTML = this.error ? `MMM-NOAAV4: ${this.esc(this.error)}` : "Gathering your weather info..";
+			return w;
 		}
-
 		const d = this.data_;
 		const c = d.current || {};
 		const imp = this.imperial();
 		const day = this.isDay();
+		const u = imp ? "&deg;F" : "&deg;C";
+		const want = this.config.forecastDays === null || this.config.forecastDays === undefined ? 3 : Number(this.config.forecastDays);
+		const n = Math.max(0, Math.min(5, Number.isNaN(want) ? 5 : want));
 
-		// condition text + icon
-		const cweat = document.createElement("div");
-		cweat.classList.add("small", "bright", "floatl");
-		cweat.innerHTML = `${this.esc(c.desc || "")}<br>`;
-		wrapper.appendChild(cweat);
+		const today = moment().format("ddd");
+		const all = (d.forecast || []).slice();
+		const todayFc = all.length && all[0].day === today ? all[0] : null;
+		const days = (todayFc ? all.slice(1) : all).slice(0, n);
 
-		const curCon = document.createElement("div");
-		curCon.classList.add("img");
-		curCon.innerHTML = `<img src="${this.icon(c.icon, !day)}">`;
-		wrapper.appendChild(curCon);
+		// right-hand line under the temperature: today's high / low, or humidity when there's no forecast
+		let sub = "";
+		if (n > 0 && todayFc) sub = `${this.fmt(this.temp(todayFc.highC))} ${u} / ${this.fmt(this.temp(todayFc.lowC))} ${u}`;
+		else if (c.humidity !== null && c.humidity !== undefined) sub = `${this.translate("Humidity")} ${Math.round(c.humidity)} %`;
 
-		// big temperature with forecast tooltip
-		const cur = document.createElement("div");
-		cur.classList.add("tempf", "tooltip");
-		const t = this.temp(c.tempC);
-		const temper = `${this.fmt(t)}&deg;<span class="tooltiptext">${this.translate("Forecast")}: ${this.esc(c.summary || c.desc || "")}</span>`;
-		cur.innerHTML = `<div class="divTable"><div class="divTableBody">
-			<div class="divTableRow"><div class="divTableHead"> </div></div>
-			<div class="divTableRow"><div class="divTableCell2">${temper}</div></div>
-			</div></div>`;
-		wrapper.appendChild(cur);
-
-		// humidity / pressure / visibility
-		const top = document.createElement("div");
-		top.classList.add("topshow");
-		const humid = c.humidity === null || c.humidity === undefined ? "--" : `${Math.round(c.humidity)}%`;
-		const baro = imp
-			? (c.pressureMb ? `${this.fmt(c.pressureMb * 0.02953, 2)} inHg` : "--")
-			: (c.pressureMb ? `${this.fmt(c.pressureMb)} mb` : "--");
-		const vis = c.visibilityKm === null || c.visibilityKm === undefined
-			? "--"
-			: (imp ? `${this.fmt(c.visibilityKm * 0.621371)} Mi` : `${this.fmt(c.visibilityKm)} Km`);
-		top.innerHTML = `<div class="divTable"><div class="divTableBody">
-			<div class="divTableRow">
-				<div class="divTableHead">${this.translate("Humidity")}</div>
-				<div class="divTableHead">${this.translate("Pressure")}</div>
-				<div class="divTableHead">${this.translate("Visibility")}</div>
+		const decimals = n === 0 ? 1 : 0;
+		let html = `<div class="nl-head">
+			<div class="nl-icon">${this.flatIcon(c.icon, !day)}</div>
+			<div class="nl-cond">
+				<div class="nl-desc">${this.esc(c.desc || "")}</div>
+				<div class="nl-place">${this.esc(this.config.title || "Home")}</div>
 			</div>
-			<div class="divTableRow">
-				<div class="divTableCell">${humid}</div>
-				<div class="divTableCell">${baro}</div>
-				<div class="divTableCell">${vis}</div>
-			</div></div></div>`;
-		wrapper.appendChild(top);
-
-		// sunrise / daylight / sunset
-		let rise = "--";
-		let set = "--";
-		let light = "--";
-		if (d.sun) {
-			rise = moment(d.sun.sunrise).format(this.timeFmt());
-			set = moment(d.sun.sunset).format(this.timeFmt());
-			const s = d.sun.daylightSeconds || 0;
-			light = `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, "0")}`;
-		}
-		const nextDiv = document.createElement("div");
-		nextDiv.innerHTML = `<div class="divTable"><div class="divTableBody">
-			<div class="divTableRow">
-				<div class="divTableHead">${this.translate("Rise")}</div>
-				<div class="divTableHead">${this.translate("Hours of Light")}</div>
-				<div class="divTableHead">${this.translate("Set")}</div>
+			<div class="nl-now">
+				<div class="nl-temp">${this.fmt(this.temp(c.tempC), decimals)}${u}</div>
+				${sub ? `<div class="nl-sub">${sub}</div>` : ""}
 			</div>
-			<div class="divTableRow">
-				<div class="divTableCell">${rise}</div>
-				<div class="divTableCell">${light}</div>
-				<div class="divTableCell">${set}</div>
-			</div></div></div>`;
-		wrapper.appendChild(nextDiv);
+		</div>`;
 
-		// AQI / UV (day) or moon (night) / wind
-		const uv = c.uv === null || c.uv === undefined ? "--" : Math.round(c.uv);
-		const moonSrc = this.config.moon[d.moon] ? this.file(this.config.moon[d.moon]) : this.file("images/smallmoon.png");
-		const wind = c.windKph === null || c.windKph === undefined
-			? "--"
-			: (imp ? `${Math.round(c.windKph * 0.621371)} mph` : `${Math.round(c.windKph)} km/h`);
-		const lastDiv = document.createElement("div");
-		lastDiv.innerHTML = `<div class="divTable"><div class="divTableBody">
-			<div class="divTableRow">
-				<div class="divTableHead">AQI</div>
-				<div class="divTableHead">${day ? "UV" : this.translate("Night")}</div>
-				<div class="divTableHead">${this.translate("Wind")}</div>
-			</div>
-			<div class="divTableRow">
-				<div class="divTableCell">${d.aqi === null || d.aqi === undefined ? "--" : d.aqi}</div>
-				<div class="divTableCell">${day ? uv : `<img src="${moonSrc}" title="${this.esc(d.moon)}" height="27" width="27">`}</div>
-				<div class="divTableCell">${wind}</div>
-			</div></div></div>`;
-		wrapper.appendChild(lastDiv);
-
-		// 4 day forecast
-		const forecast = d.forecast || [];
-		if (forecast.length) {
-			const table = document.createElement("table");
-			table.classList.add("table");
-			table.setAttribute("style", "line-height: 20%;");
-
-			const head = document.createElement("tr");
-			const th = document.createElement("th");
-			th.setAttribute("colspan", String(forecast.length));
-			th.classList.add("rheading");
-			th.innerHTML = this.translate("4 Day Forecast");
-			head.appendChild(th);
-			table.appendChild(head);
-
-			const today = moment().format("ddd");
-			const names = document.createElement("tr");
-			const icons = document.createElement("tr");
-			const temps = document.createElement("tr");
-			forecast.forEach((f, i) => {
-				const n = document.createElement("td");
-				n.classList.add("xsmall", "bright");
-				n.innerHTML = i === 0 && f.day === today ? this.translate("Today") : this.translate(f.day);
-				names.appendChild(n);
-
-				const ic = document.createElement("td");
-				ic.classList.add("CellWithComment");
-				ic.innerHTML = `<img src="${this.icon(f.icon, false)}" height="22" width="28"><span class="CellComment">${this.esc(f.desc || "")}</span>`;
-				icons.appendChild(ic);
-
-				const tt = document.createElement("td");
-				tt.classList.add("xsmall", "bright");
-				tt.innerHTML = `${this.fmt(this.temp(f.highC))}/${this.fmt(this.temp(f.lowC))}`;
-				temps.appendChild(tt);
-			});
-			table.appendChild(names);
-			table.appendChild(icons);
-			table.appendChild(temps);
-			wrapper.appendChild(table);
+		if (days.length) {
+			html += `<div class="nl-fc">${days.map((f) => `
+				<div class="nl-day">
+					<div class="nl-dname">${this.esc(this.translate(f.day))}</div>
+					<div class="nl-dicon" title="${this.esc(f.desc || "")}">${this.flatIcon(f.icon, false)}</div>
+					<div class="nl-hi">${this.fmt(this.temp(f.highC))}&deg;</div>
+					<div class="nl-lo">${this.fmt(this.temp(f.lowC))}&deg;</div>
+				</div>`).join("")}
+			</div>`;
 		}
 
-		// weather alerts (US National Weather Service, or Pirate Weather)
+		// details row: humidity, wind, AQI, UV Index
+		if (this.config.details !== false) {
+			const item = (icon, color, label, value, extra = "") => `<div class="nl-item">
+				<div class="nl-ilabel"><i class="fa-solid ${icon}" style="color:${color}"></i> ${label}</div>
+				<div class="nl-ivalue">${value}${extra ? ` <span class="nl-iextra">${extra}</span>` : ""}</div>
+			</div>`;
+			const hum = c.humidity === null || c.humidity === undefined ? "--" : `${Math.round(c.humidity)}%`;
+			let wind = "--";
+			let windDir = "";
+			if (c.windKph !== null && c.windKph !== undefined) {
+				wind = imp ? `${Math.round(c.windKph * 0.621371)} mph` : `${Math.round(c.windKph)} km/h`;
+				if (Math.round(c.windKph) > 0) windDir = this.compass(c.windDeg);
+			}
+			const aqi = d.aqi === null || d.aqi === undefined ? "--" : String(d.aqi);
+			const aqiText = d.aqi === null || d.aqi === undefined ? "" : this.translate(this.aqiText(d.aqi));
+			const uvN = c.uv === null || c.uv === undefined ? null : Math.round(c.uv);
+			const uvText = uvN === null ? "" : this.translate({ low: "Low", moderate: "Moderate", high: "High", veryhigh: "Very High" }[this.uvLevel(uvN)]);
+			html += `<div class="nl-details">
+				${item("fa-droplet", "#42a5f5", this.translate("Humidity"), hum)}
+				${item("fa-wind", "#78909c", this.translate("Wind"), wind, windDir)}
+				${item("fa-leaf", "#43a047", "AQI", aqi, aqiText)}
+				${item("fa-sun", "#f9a825", this.translate("UV Index"), uvN === null ? "--" : String(uvN), uvText)}
+			</div>`;
+		}
+
 		const alerts = d.alerts || [];
 		if (alerts.length) {
 			if (this.activeItem >= alerts.length) this.activeItem = 0;
 			const a = alerts[this.activeItem];
-
-			const warning = document.createElement("div");
-			warning.classList.add("advise");
-			warning.innerHTML = `${this.translate("Weather Advisory")}<br>${this.translate("Type")}: ${this.esc(a.severity || "")}`;
-			wrapper.appendChild(warning);
-
-			const emer = document.createElement("div");
-			emer.classList.add("warning", "bright");
-			const desc = String(a.description || "").split(/\s+/).slice(0, 30).join(" ");
-			emer.innerHTML = `${this.esc(a.title)}${desc ? `<span class="adesc">${this.esc(desc)}</span>` : ""}`;
-			wrapper.appendChild(emer);
-
-			if (a.regions && a.regions.length) {
-				const area = document.createElement("div");
-				area.classList.add("areas");
-				area.innerHTML = `${this.translate("Areas affected")}:<br>`;
-				wrapper.appendChild(area);
-
-				const list = document.createElement("div");
-				list.classList.add("list");
-				list.innerHTML = this.esc(a.regions.slice(0, 8).join(", "));
-				wrapper.appendChild(list);
-			}
+			const sev = String(a.severity || "").toLowerCase();
+			html += `<div class="nl-alert ${sev === "extreme" || sev === "severe" ? "nl-alert-severe" : ""}"><i class="fa-solid fa-triangle-exclamation"></i> ${this.esc(a.title || this.translate("Weather Advisory"))}</div>`;
 		}
-
-		if (this.config.nupdate) {
-			const mod = document.createElement("div");
-			mod.classList.add("xxsmall");
-			mod.setAttribute("style", "text-align: center;");
-			const u = moment(d.updated);
-			const stamp = config.timeFormat === 12 ? u.format("M.D.YYYY @ h:mm a") : u.format("DD.MM.YYYY @ HH:mm");
-			mod.innerHTML = `<font color=yellow>[</font>${this.translate("Updated")}: ${stamp}<font color=yellow>]</font>`;
-			wrapper.appendChild(mod);
-		}
-		return wrapper;
+		w.innerHTML = html;
+		return w;
 	}
 });

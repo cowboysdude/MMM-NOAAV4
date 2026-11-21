@@ -1,26 +1,23 @@
 # MMM-NOAAV4
 
-Weather for [MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror): current conditions, a
-4-day forecast, sunrise and sunset, hours of daylight, UV index, air quality (AQI), the moon phase at
-night, and US National Weather Service alerts.
+Weather for [MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror) on a clean weather card:
+current conditions, today's high and low, a 3-day forecast, humidity, wind, air quality (AQI),
+UV index, and US National Weather Service alerts. Comes in **white** and **dark**.
 
 - Works with current MagicMirror² (2.3x) on Node.js 22 or newer
 - No API key needed by default
 - No npm packages to install
-- Four color styles, and every part can be restyled with `custom.css`
+- Sharp built-in weather icons that look right at any size
 
 ## Screenshots
 
-| NOAA4 (default), daytime, metric | NOAA1, night, imperial | NOAA2, night, imperial | NOAA3, night, imperial |
-|:---:|:---:|:---:|:---:|
-| ![NOAA4 style, daytime](examples/noaa4-live.png) | ![NOAA1 style, night](examples/1.png) | ![NOAA2 style, night](examples/2.png) | ![NOAA3 style, night](examples/3.png) |
+| White (default) | Dark (`css: "dark"`) |
+|:---:|:---:|
+| ![White card](examples/light.png) | ![Dark card](examples/dark.png) |
 
-In the daytime the middle box of the bottom row shows the **UV index**. At night it shows the
-**moon phase** instead.
-
-All four styles side by side, with a weather alert showing:
-
-![All four styles with a weather alert](examples/styles.png)
+Top row: current condition, your location name, the temperature, and today's high and low.
+Middle: the next 3 days. Bottom: humidity, wind speed and direction, air quality and UV index.
+Any active weather alert shows as a strip at the very bottom.
 
 ---
 
@@ -34,9 +31,8 @@ All four styles side by side, with a weather alert showing:
 - [Configuration options](#configuration-options)
 - [°F or °C, and 12- or 24-hour time](#f-or-c-and-12--or-24-hour-time)
 - [Weather providers](#weather-providers)
-- [Styles](#styles)
+- [White or dark](#white-or-dark)
 - [Custom CSS](#custom-css)
-- [Your own moon pictures](#your-own-moon-pictures)
 - [Mouseover](#mouseover)
 - [Updating](#updating)
 - [Upgrading from MMM-NOAA3](#upgrading-from-mmm-noaa3)
@@ -105,10 +101,11 @@ A fuller example:
     provider: "nws",          // NOAA / National Weather Service (USA), no key needed
     lat: 42.0917,
     lon: -76.8400,
-    units: "imperial",        // °F, mph, inHg, miles
-    css: "NOAA4",             // color style
+    units: "imperial",        // °F, mph, miles
+    css: "dark",              // "light" (white, default) or "dark"
+    title: "Home Weather",    // name under the condition
+    forecastDays: 3,          // 0 to 5
     alerts: true,             // show NWS weather alerts
-    nupdate: true,            // show "Updated: ..." at the bottom
     updateInterval: 30 * 60 * 1000
   }
 },
@@ -155,18 +152,20 @@ wrong, the error appears on the mirror in plain words, and also in the terminal 
 | `provider` | `"openmeteo"` | Where the weather comes from. See [Weather providers](#weather-providers). |
 | `apiKey` | `""` | Key for the providers that need one. |
 | `zip` | `""` | AccuWeather only: your AccuWeather location number (not your ZIP code). |
-| `units` | from `config.js` | `"imperial"` (°F, mph, inHg, miles) or `"metric"` (°C, km/h, mb, km). Set it here to override the units at the top of `config.js` for this module only. |
-| `css` | `""` | Color style: `"NOAA1"`, `"NOAA2"`, `"NOAA3"`, or leave it out for the NOAA4 look. See [Styles](#styles). |
+| `units` | from `config.js` | `"imperial"` (°F, mph) or `"metric"` (°C, km/h). Set it here to override the units at the top of `config.js` for this module only. |
+| `css` | `"light"` | `"light"` for the white card or `"dark"` for the dark card. See [White or dark](#white-or-dark). |
+| `title` | `"Home"` | The name shown under the condition, e.g. `"Home Weather"` or your town. |
+| `forecastDays` | `3` | How many days in the forecast row, `0` to `5`. With `0` the card is just the top row, and it shows humidity under the temperature instead of today's high and low. |
+| `details` | `true` | The bottom row with humidity, wind, AQI and UV index. `false` hides it. |
 | `alerts` | `true` | Show active US National Weather Service alerts for your location. |
-| `nupdate` | `false` | Show an "Updated: …" line at the bottom. |
 | `updateInterval` | `30 * 60 * 1000` | How often to fetch new weather, in milliseconds. The minimum is 10 minutes. |
 | `rotateInterval` | `60 * 1000` | How long each alert stays on screen when there are several. |
 | `animationSpeed` | `0` | Fade time in milliseconds when the display refreshes. |
 | `lang` | from `config.js` | Language for the weather service's descriptions, e.g. `"en"`, `"de"`. |
-| `moon` | built in | Swap in your own moon pictures. See [Your own moon pictures](#your-own-moon-pictures). |
 
-**No longer used:** `airKey` (AQI no longer needs a key), `pws`, `appID`, `initialLoadDelay`, `frow`
-and `uvScale`. Leaving any of these in your config is harmless.
+**No longer used:** `nupdate`, `moon`, `airKey` (AQI no longer needs a key), `pws`, `appID`,
+`initialLoadDelay`, `frow` and `uvScale`. Leaving any of these in your config is harmless. The old
+`css` values `"NOAA1"` to `"NOAA4"` now just show the white card.
 
 ---
 
@@ -182,7 +181,7 @@ const config = {
   ...
 ```
 
-- **`timeFormat`** controls the clock and this module's sunrise, sunset and "Updated" times.
+- **`timeFormat`** controls the clock on your mirror.
 - **`units`** is the default for every module. To give *only* this module different units, add
   `units` to its own `config` block:
 
@@ -212,9 +211,8 @@ number at the end of the address is what goes in `zip`, e.g. `.../weather-foreca
 `zip: "330275"`.
 
 **These are the same for every provider:**
-- Sunrise, sunset, daylight and UV come from Open-Meteo, with no key needed.
+- Sunrise, sunset (used to pick day or night icons) and UV come from Open-Meteo, with no key needed.
 - AQI is the US AQI from the Open-Meteo air-quality API, with no key needed.
-- The moon phase is calculated by the module itself.
 - Alerts come from the National Weather Service (US only). Pirate Weather uses its own alerts instead.
 
 **Retired services** are switched over automatically, with a note in the log:
@@ -240,20 +238,20 @@ config: { provider: "accuweather", apiKey: "YOUR_KEY", zip: "330275", lat: 42.09
 
 ---
 
-## Styles
+## White or dark
 
-Pick a color style with `css:`
-
-![styles](examples/styles.png)
+Pick the card with `css:`
 
 | `css:` | Look |
 |---|---|
-| `"NOAA1"` | Gold headings |
-| `"NOAA2"` | Blue headings |
-| `"NOAA3"` | Green headings |
-| `"NOAA4"`, anything else, or leave it out | NOAA4: color-cycling headings, centered alert block |
+| `"light"`, or leave it out | White card with dark text |
+| `"dark"` | Dark gray card with light text |
 
-All styles only affect this module. They don't change the look of your other modules.
+![White and dark cards](examples/light-and-dark.png)
+
+Want just the top row, like a small status card? Use `forecastDays: 0` and `details: false`.
+
+The card only changes the look of this module, not your other modules.
 
 ---
 
@@ -265,91 +263,52 @@ restart or reload the mirror.
 
 **What each part is called:**
 
-| Part of the display | CSS selector |
+| Part of the card | CSS selector |
 |---|---|
-| The whole module (195px wide) | `.MMM-NOAAV4` |
-| Condition text ("Mostly Cloudy") | `.MMM-NOAAV4 .floatl` |
-| Big current-condition icon | `.MMM-NOAAV4 .img img` |
-| Big temperature | `.MMM-NOAAV4 .divTableCell2` |
-| Little headings (Humidity, Rise, AQI…) | `.MMM-NOAAV4 .divTableHead` |
-| Values under the headings | `.MMM-NOAAV4 .divTableCell` |
-| Humidity / Pressure / Visibility block | `.MMM-NOAAV4 .topshow` |
-| "4 Day Forecast" bar | `.MMM-NOAAV4 .rheading` |
-| Forecast day names and temperatures | `.MMM-NOAAV4 .table td` |
-| Forecast icons | `.MMM-NOAAV4 .CellWithComment img` |
-| Forecast hover text | `.MMM-NOAAV4 .CellComment` |
-| "Weather Advisory" (blinking) | `.MMM-NOAAV4 .advise` |
-| Alert name / alert details | `.MMM-NOAAV4 .warning` / `.MMM-NOAAV4 .adesc` |
-| "Areas affected" label / list | `.MMM-NOAAV4 .areas` / `.MMM-NOAAV4 .list` |
+| The card (380px wide) | `.MMM-NOAAV4 .nl` |
+| The dark card | `.MMM-NOAAV4 .nl-dark` |
+| Big condition icon | `.MMM-NOAAV4 .nl-icon` |
+| Condition text ("Sunny") | `.MMM-NOAAV4 .nl-desc` |
+| Location name ("Home") | `.MMM-NOAAV4 .nl-place` |
+| Temperature | `.MMM-NOAAV4 .nl-temp` |
+| Today's high / low | `.MMM-NOAAV4 .nl-sub` |
+| Forecast row / one day | `.MMM-NOAAV4 .nl-fc` / `.MMM-NOAAV4 .nl-day` |
+| Forecast day name, icon, high, low | `.nl-dname`, `.nl-dicon`, `.nl-hi`, `.nl-lo` |
+| Bottom details row / one item | `.MMM-NOAAV4 .nl-details` / `.MMM-NOAAV4 .nl-item` |
+| Detail label / value | `.MMM-NOAAV4 .nl-ilabel` / `.MMM-NOAAV4 .nl-ivalue` |
+| Alert strip / severe alert | `.MMM-NOAAV4 .nl-alert` / `.MMM-NOAAV4 .nl-alert-severe` |
 
 **Examples.** Copy whichever you want into `custom.css`:
 
-![custom css examples](examples/custom-css.png)
-
 ```css
-/* Plain white headings */
-.MMM-NOAAV4 .rheading     { background-color: #000; border: none; color: #fff; animation: none; }
-.MMM-NOAAV4 .divTableHead { color: #fff; animation: none; }
+/* Wider card */
+.MMM-NOAAV4 .nl { width: 460px; }
 
-/* Your own heading color, e.g. red */
-.MMM-NOAAV4 .divTableHead { color: #ff5a5a; animation: none; }
-.MMM-NOAAV4 .rheading     { background-color: #8b0000; border-color: #ff5a5a; animation: none; }
+/* Bigger temperature, in any color */
+.MMM-NOAAV4 .nl-temp { font-size: 40px; color: #1e88e5; }
 
-/* Bigger or smaller temperature, in any color */
-.MMM-NOAAV4 .divTableCell2 { font-size: 90px; color: #ffd84d; }
+/* See-through dark card, so a background picture shows through */
+.MMM-NOAAV4 .nl-dark { background: rgba(20, 22, 25, 0.75); }
 
-/* Make the whole module wider (the second line stretches the tables to fit) */
-.MMM-NOAAV4 { width: 260px; }
-.MMM-NOAAV4 .divTable, .MMM-NOAAV4 .table { width: 100%; }
+/* Square corners and no shadow */
+.MMM-NOAAV4 .nl { border-radius: 0; box-shadow: none; }
 
-/* Bigger forecast icons */
-.MMM-NOAAV4 .CellWithComment img { width: 40px; height: 32px; }
+/* Hide the AQI and UV items in the bottom row */
+.MMM-NOAAV4 .nl-item:nth-child(3), .MMM-NOAAV4 .nl-item:nth-child(4) { display: none; }
 
-/* Stop the alert from blinking, and make it red */
-.MMM-NOAAV4 .advise { animation: none; color: #ff4444; }
-
-/* Hide parts you don't want */
-.MMM-NOAAV4 .topshow { display: none; }                         /* Humidity / Pressure / Visibility */
-.MMM-NOAAV4 .adesc   { display: none; }                         /* alert details */
-.MMM-NOAAV4 .areas, .MMM-NOAAV4 .list { display: none; }        /* areas affected */
-
-/* Dim the whole module */
-.MMM-NOAAV4 { opacity: 0.7; }
+/* Dim the whole card */
+.MMM-NOAAV4 .nl { opacity: 0.85; }
 ```
-
-The NOAA4 style cycles its heading colors. Add `animation: none;` as shown above when you set your
-own heading color, or the cycling will paint over it.
-
----
-
-## Your own moon pictures
-
-Put your pictures in the module's `images/moon/` folder and list them in your config. You only
-need the phases you want to change:
-
-```js
-config: {
-  lat: 42.0917,
-  lon: -76.8400,
-  moon: {
-    "Full Moon": "images/moon/my-full-moon.png",
-    "New Moon": "images/moon/my-new-moon.png"
-  }
-}
-```
-
-Phase names: New Moon, Waxing Crescent, First Quarter, Waxing Gibbous, Full Moon, Waning Gibbous,
-Last Quarter, Waning Crescent.
 
 ---
 
 ## Mouseover
 
-On a touch screen, or with a mouse plugged in:
-- Hover over the big temperature to see today's forecast text.
-- Hover over a forecast icon to see that day's forecast.
+On a touch screen, or with a mouse plugged in, hover over a forecast icon to see that day's
+forecast in words.
 
-Other modules can use the `WEATHER` notification this module sends (`{ icon, sunset }`).
+Other modules can use the `WEATHER` notification this module sends (`{ icon, sunrise, sunset, isDay }`),
+for example [MMM-WeatherBackgroundV4](https://github.com/cowboysdude/MMM-WeatherBackgroundV4).
 
 ---
 
@@ -388,12 +347,10 @@ v4 lives in this repository under the new module name **`MMM-NOAAV4`**.
    module: "MMM-NOAAV4",
    ```
 
-3. In `~/MagicMirror/css/custom.css`, change any `.MMM-NOAA3` rules to `.MMM-NOAAV4`.
+3. Old `.MMM-NOAA3` rules in `~/MagicMirror/css/custom.css` were made for the old look, so remove
+   them. See [Custom CSS](#custom-css) for the parts of the new card.
 
-4. If you had your own moon pictures in `MMM-NOAA3-old/images/moon/`, copy them into
-   `MMM-NOAAV4/images/moon/`.
-
-5. Restart MagicMirror. Once v4 is working, delete `MMM-NOAA3-old`.
+4. Restart MagicMirror. Once v4 is working, delete `MMM-NOAA3-old`.
 
 Everything else in your config can stay as it is: `userlat` and `userlon` still work, and retired
 providers are switched over automatically.
@@ -427,6 +384,15 @@ npm test
 ```
 
 ---
+
+## What changed in v4.1
+
+- **New look:** a clean weather card in **white** (default) or **dark** (`css: "dark"`), with
+  sharp built-in icons.
+- **New on the card:** today's high and low, wind direction, and a bottom row with humidity, wind,
+  AQI and UV index.
+- **New options:** `title`, `forecastDays` (0 to 5) and `details`.
+- **Removed:** the old NOAA1 to NOAA4 looks, the moon pictures and the "Updated" line.
 
 ## What changed in v4
 

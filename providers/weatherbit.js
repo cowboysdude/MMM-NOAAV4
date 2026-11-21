@@ -9,7 +9,7 @@ async function getWeather (cfg) {
 		fetchJson(`https://api.weatherbit.io/v2.0/forecast/daily?days=4&${q}`)
 	]);
 	const c = (cur.data && cur.data[0]) || {};
-	const forecast = (fc.data || []).slice(0, 4).map((d) => ({
+	const forecast = (fc.data || []).slice(0, 6).map((d) => ({
 		day: DAYS[new Date(`${d.valid_date}T12:00:00Z`).getUTCDay()],
 		icon: iconFromWeatherbit(d.weather && d.weather.code),
 		desc: d.weather && d.weather.description,

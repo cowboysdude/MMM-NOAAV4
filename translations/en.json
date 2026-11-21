@@ -35,5 +35,18 @@
   "Type": "Type",
   "Areas affected": "Areas affected",
   "Updated": "Updated",
-  "UV": "UV"
+  "UV": "UV",
+  "Feels like": "Feels like",
+  "Day Forecast": "Day Forecast",
+  "UV Index": "UV Index",
+  "Rising": "Rising",
+  "Falling": "Falling",
+  "Steady": "Steady",
+  "Moderate": "Moderate",
+  "Unhealthy for some": "Unhealthy for some",
+  "Unhealthy": "Unhealthy",
+  "Very Unhealthy": "Very Unhealthy",
+  "Low": "Low",
+  "High": "High",
+  "Very High": "Very High"
 }

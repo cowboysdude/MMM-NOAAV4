@@ -97,54 +97,76 @@ test("ignores data for other instances", () => {
 	assert.match(m.getDom().outerHTML, /Gathering/);
 });
 
-test("imperial, 12-hour, daytime render", () => {
-	const m = load({ units: "imperial", timeFormat: 12, language: "en" }, { css: "NOAA3", nupdate: true });
-	m.socketNotificationReceived("NOAA3_DATA", payload);
-	const html = m.getDom().outerHTML;
-	fs.writeFileSync(path.join(__dirname, "render-imperial.html"), html);
-	assert.match(html, /51&deg;/, "10.6C -> 51F");
-	assert.match(html, /30\.04 inHg/);
-	assert.match(html, /10 Mi/);
-	assert.match(html, /9 mph/);
-	assert.match(html, />42</, "AQI");
-	assert.match(html, />3</, "UV in daytime");
-	assert.match(html, /images\/mostlycloudy\.png/, "day icon");
-	assert.match(html, /Today/);
-	assert.match(html, /52\/36/);
-	assert.match(html, /Winter Weather Advisory/);
-	assert.match(html, /Chemung, Steuben/);
-	assert.match(html, /9:45/, "daylight h:mm");
-	assert.match(html, /Updated:/);
-	assert.match(html, /&lt;b&gt;today&lt;\/b&gt;/, "text is escaped");
-	assert.deepEqual(m.getStyles(), ["modules/MMM-NOAAV4/css/MMM-NOAA3.css"]);
+const card = { ...payload, current: { ...payload.current, feelsLikeC: 8.9, windDeg: 225, pressureTrend: "Steady" } };
+
+test("white card is the default; dark is the option; one stylesheet", () => {
+	const m = load({ units: "imperial" }, {});
+	assert.deepEqual(m.getStyles(), ["modules/MMM-NOAAV4/css/MMM-NOAAV4.css"]);
+	m.socketNotificationReceived("NOAA3_DATA", card);
+	assert.match(m.getDom().outerHTML, /^<div class="nl">/);
+	const d = load({ units: "imperial" }, { css: "dark" });
+	d.socketNotificationReceived("NOAA3_DATA", card);
+	assert.match(d.getDom().outerHTML, /^<div class="nl nl-dark">/);
+	const old = load({ units: "imperial" }, { css: "NOAA3" });
+	old.socketNotificationReceived("NOAA3_DATA", card);
+	assert.match(old.getDom().outerHTML, /^<div class="nl">/, "old style names fall back to the white card");
 });
 
-test("metric, 24-hour, night render shows moon and night icon", () => {
+test("imperial daytime: header, 3-day forecast, details row, alert", () => {
+	const m = load({ units: "imperial", timeFormat: 12, language: "en" }, { title: "Home Weather" });
+	m.socketNotificationReceived("NOAA3_DATA", card);
+	const html = m.getDom().outerHTML;
+	fs.writeFileSync(path.join(__dirname, "render-card.html"), html);
+	assert.match(html, /nl-desc">Mostly Cloudy/);
+	assert.match(html, /nl-place">Home Weather/);
+	assert.match(html, /nl-temp">51&deg;F/);
+	assert.match(html, /nl-sub">52 &deg;F \/ 36 &deg;F/, "today's high / low");
+	assert.match(html, /<svg class="nl-svg"/);
+	assert.equal((html.match(/class="nl-day"/g) || []).length, 3);
+	assert.doesNotMatch(html, /nl-dname">Today/);
+	assert.match(html, /nl-dname">Mon<.*nl-hi">47&deg;.*nl-lo">30&deg;/s);
+	assert.match(html, /Humidity<\/div>\s*<div class="nl-ivalue">61%/);
+	assert.match(html, /Wind<\/div>\s*<div class="nl-ivalue">9 mph <span class="nl-iextra">SW/);
+	assert.match(html, /AQI<\/div>\s*<div class="nl-ivalue">42 <span class="nl-iextra">Good/);
+	assert.match(html, /UV Index<\/div>\s*<div class="nl-ivalue">3 <span class="nl-iextra">Moderate/);
+	assert.doesNotMatch(html, /Pressure/);
+	assert.match(html, /Winter Weather Advisory/);
+	assert.match(html, /&lt;b&gt;|Mostly Cloudy/);
+	assert.doesNotMatch(html, /NaN|undefined|null/);
+});
+
+test("metric at night shows the moon icon", () => {
 	const m = load({ units: "metric", timeFormat: 24, language: "en" }, {});
-	const night = { ...payload, sun: { sunrise: new Date(now + 3600e3).toISOString(), sunset: new Date(now + 7200e3).toISOString(), daylightSeconds: 30000 }, alerts: [] };
+	const night = { ...card, current: { ...card.current, icon: "clear", desc: "Clear" }, sun: { sunrise: new Date(now + 3600e3).toISOString(), sunset: new Date(now + 7200e3).toISOString(), daylightSeconds: 30000 }, alerts: [] };
 	m.socketNotificationReceived("NOAA3_DATA", night);
 	const html = m.getDom().outerHTML;
-	assert.match(html, /11&deg;/);
-	assert.match(html, /1017 mb/);
-	assert.match(html, /16 Km/);
-	assert.match(html, /15 km\/h/);
-	assert.match(html, /images\/nt_mostlycloudy\.png/);
-	assert.match(html, /images\/moon\/waxingcrescent\.png/);
-	assert.match(html, />Night</);
-	assert.doesNotMatch(html, /Advisory/);
-	assert.deepEqual(m.getStyles(), ["modules/MMM-NOAAV4/css/MMM-NOAA4.css"]);
+	assert.match(html, /nl-temp">11&deg;C/);
+	assert.match(html, /15 km\/h <span class="nl-iextra">SW/);
+	assert.match(html, /M27 6a14/, "moon shape, not the sun");
+	assert.doesNotMatch(html, /nl-alert/);
+});
+
+test("forecastDays: 0 shows humidity and one decimal; details: false hides the row", () => {
+	const m = load({ units: "imperial", timeFormat: 12, language: "en" }, { forecastDays: 0, details: false, title: "Porch" });
+	m.socketNotificationReceived("NOAA3_DATA", { ...card, alerts: [] });
+	const html = m.getDom().outerHTML;
+	assert.match(html, /nl-temp">51\.1&deg;F/);
+	assert.match(html, /Humidity 61 %/);
+	assert.match(html, /nl-place">Porch/);
+	assert.doesNotMatch(html, /nl-day|nl-details|nl-alert/);
 });
 
 test("missing values show -- instead of NaN/undefined", () => {
 	const m = load({ units: "imperial", timeFormat: 12 }, {});
-	m.socketNotificationReceived("NOAA3_DATA", { ...payload, current: { desc: "Clear", icon: "clear", tempC: 5 }, aqi: null, sun: null, alerts: [] });
+	m.socketNotificationReceived("NOAA3_DATA", { ...payload, current: { desc: "Clear", icon: "clear", tempC: 5 }, aqi: null, sun: null, alerts: [], forecast: [] });
 	const html = m.getDom().outerHTML;
 	assert.doesNotMatch(html, /NaN|undefined|null/);
+	assert.match(html, /41&deg;F/);
 	assert.match(html, /--/);
 });
 
-test("overriding one moon picture keeps the others", () => {
-	const m = load({ units: "imperial" }, { moon: { "Full Moon": "images/moon/mine.png" } });
-	assert.equal(m.config.moon["Full Moon"], "images/moon/mine.png");
-	assert.equal(m.config.moon["New Moon"], "images/moon/newmoon.png");
+test("text from the weather service is escaped", () => {
+	const m = load({ units: "imperial" }, {});
+	m.socketNotificationReceived("NOAA3_DATA", { ...card, current: { ...card.current, desc: "<b>Hot</b>" } });
+	assert.match(m.getDom().outerHTML, /&lt;b&gt;Hot&lt;\/b&gt;/);
 });

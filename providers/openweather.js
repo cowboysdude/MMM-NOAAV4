@@ -23,7 +23,7 @@ async function getWeather (cfg) {
 		d.lo = Math.min(d.lo, s.main.temp_min);
 		d.slots.push({ hour: local.getUTCHours(), w: s.weather[0] });
 	}
-	const forecast = [...byDay.values()].slice(0, 4).map((d) => {
+	const forecast = [...byDay.values()].slice(0, 6).map((d) => {
 		const mid = d.slots.reduce((a, b) => (Math.abs(b.hour - 13) < Math.abs(a.hour - 13) ? b : a));
 		return { day: d.day, icon: iconFromOwm(mid.w.icon), desc: mid.w.description, highC: d.hi, lowC: d.lo };
 	});

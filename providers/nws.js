@@ -65,7 +65,7 @@ async function getWeather (cfg) {
 			}
 		}
 	}
-	const forecast = days.slice(0, 4).map((d) => ({
+	const forecast = days.slice(0, 6).map((d) => ({
 		day: d.day, icon: d.icon, desc: d.desc,
 		highC: d.highC !== undefined ? d.highC : d.lowC,
 		lowC: d.lowC !== undefined ? d.lowC : d.highC
@@ -81,6 +81,7 @@ async function getWeather (cfg) {
 			pressureMb: v(obs.barometricPressure) !== null ? v(obs.barometricPressure) / 100 : null,
 			visibilityKm: v(obs.visibility) !== null ? v(obs.visibility) / 1000 : null,
 			windKph: v(obs.windSpeed),
+			windDeg: v(obs.windDirection),
 			summary: first.detailedForecast || ""
 		}
 		: {

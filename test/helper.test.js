@@ -44,7 +44,7 @@ function checkShape (data) {
 	assert.ok(data.current, "current");
 	assert.equal(typeof data.current.tempC, "number");
 	assert.ok(data.current.icon && data.current.icon !== "unknown", `current icon (${data.current.icon})`);
-	assert.equal(data.forecast.length, 4, "4 forecast days");
+	assert.ok(data.forecast.length >= 4 && data.forecast.length <= 6, `4-6 forecast days (got ${data.forecast.length})`);
 	for (const f of data.forecast) {
 		assert.ok(util.DAYS.includes(f.day), `day ${f.day}`);
 		assert.equal(typeof f.highC, "number");
@@ -159,10 +159,12 @@ test("moon phase matches known dates", () => {
 	assert.equal(util.moonPhase(new Date("2024-05-01T11:27:00Z")), "Last Quarter");
 });
 
-test("every icon the providers can return exists in images/", () => {
+test("every icon the providers can return has a built-in card icon", () => {
 	const fs = require("node:fs");
 	const path = require("node:path");
-	const files = new Set(fs.readdirSync(path.join(__dirname, "..", "images")));
+	const src = fs.readFileSync(path.join(__dirname, "..", "MMM-NOAAV4.js"), "utf8");
+	const block = src.slice(src.indexOf("const body = {"), src.indexOf("}[n]"));
+	const keys = new Set([...block.matchAll(/([a-z]+):/g)].map((m) => m[1]));
 	const names = new Set();
 	for (let i = 0; i <= 99; i++) names.add(util.iconFromWmo(i));
 	for (let i = 0; i <= 44; i++) names.add(util.iconFromAccu(i));
@@ -170,7 +172,6 @@ test("every icon the providers can return exists in images/", () => {
 	["01d", "02d", "03d", "04d", "09d", "10d", "11d", "13d", "50d"].forEach((c) => names.add(util.iconFromOwm(c)));
 	["skc", "few", "sct", "bkn", "ovc", "rain", "snow", "tsra", "fog", "haze", "wind_bkn", "fzra", "hot"].forEach((t) => names.add(util.iconFromNws(`https://x/icons/land/day/${t}`)));
 	for (const n of names) {
-		assert.ok(files.has(`${n}.png`), `images/${n}.png missing`);
-		if (n !== "unknown") assert.ok(files.has(`nt_${n}.png`), `images/nt_${n}.png missing`);
+		if (n !== "unknown") assert.ok(keys.has(n), `no card icon for "${n}"`);
 	}
 });

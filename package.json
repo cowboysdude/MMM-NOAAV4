@@ -1,7 +1,7 @@
 {
   "name": "mmm-noaa3",
-  "version": "4.0.0",
-  "description": "Weather, UV, air quality, moon phase and NWS alerts for MagicMirror\u00b2. Maintained by cowboysdude.",
+  "version": "4.1.0",
+  "description": "Weather card for MagicMirror² in white or dark: conditions, 3-day forecast, humidity, wind, AQI, UV and NWS alerts. Maintained by cowboysdude.",
   "main": "MMM-NOAAV4.js",
   "dependencies": {},
   "scripts": {

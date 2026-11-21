@@ -114,7 +114,12 @@ module.exports = NodeHelper.create({
 
 		const src = base || main;
 		const current = { ...main.current };
-		if ((current.uv === undefined || current.uv === null) && base) current.uv = base.current.uv;
+		// fill in anything the main provider doesn't have from Open-Meteo
+		if (base) {
+			for (const k of ["uv", "feelsLikeC", "windDeg", "pressureTrend"]) {
+				if ((current[k] === undefined || current[k] === null) && base.current[k] !== undefined) current[k] = base.current[k];
+			}
+		}
 		return {
 			provider: cfg.provider,
 			current,
