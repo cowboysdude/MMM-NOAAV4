@@ -109,6 +109,7 @@ A fuller example:
     title: "Home Weather",    // name under the condition
     forecastDays: 3,          // 0 to 5
     sun: true,                // sunrise, countdown to sunset, sunset
+    width: 330,               // card width in pixels
     alerts: true,             // show NWS weather alerts
     updateInterval: 30 * 60 * 1000
   }
@@ -161,6 +162,7 @@ wrong, the error appears on the mirror in plain words, and also in the terminal 
 | `title` | `"Home"` | The name shown under the condition, e.g. `"Home Weather"` or your town. |
 | `forecastDays` | `3` | How many days in the forecast row, `0` to `5`. With `0` the card is just the top row, and it shows humidity under the temperature instead of today's high and low. |
 | `details` | `true` | The row with humidity, wind, AQI and UV index. `false` hides it. |
+| `width` | `330` | Card width in pixels. Below about 320, long weather words like "Light Drizzle" get cut off. |
 | `sun` | `true` | The sun row: sunrise, a live countdown to sunset (or **Night** after dark), and sunset. `false` hides it. See [Sun row](#sun-row). |
 | `alerts` | `true` | Show active US National Weather Service alerts for your location. |
 | `updateInterval` | `30 * 60 * 1000` | How often to fetch new weather, in milliseconds. The minimum is 10 minutes. |
@@ -314,7 +316,7 @@ restart or reload the mirror.
 
 ```css
 /* Wider card */
-.MMM-NOAAV4 .nl { width: 460px; }
+.MMM-NOAAV4 .nl { width: 460px !important; }
 
 /* Bigger temperature, in any color */
 .MMM-NOAAV4 .nl-temp { font-size: 40px; color: #1e88e5; }
@@ -428,6 +430,7 @@ npm test
 - **Live countdown to sunset** with seconds, between sunrise and sunset. At sunset it switches to
   **Night** with a moon icon, and back to the countdown at sunrise.
 - **New option:** `sun` (`false` hides the row).
+- **Narrower card:** 330 px wide by default (was 380). **New option:** `width` to set your own.
 - **Fixed:** sunrise, sunset and the day/night check used *yesterday's* times, so the card (and
   [MMM-WeatherBackgroundV4](https://github.com/cowboysdude/MMM-WeatherBackgroundV4)) showed night
   all day. The forecast row also started a day early.

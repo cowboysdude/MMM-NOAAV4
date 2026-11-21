@@ -10,6 +10,7 @@ Module.register("MMM-NOAAV4", {
 		lon: "",
 		zip: "",                    // AccuWeather location number (same as locationKey)
 		css: "light",               // "light" = white card | "dark" = dark card
+		width: 330,                 // card width in pixels
 		title: "Home",              // name under the condition, e.g. "Home Weather"
 		forecastDays: 3,            // days in the forecast row: 0 (none) to 5
 		details: true,              // row with humidity, wind, AQI and UV Index
@@ -194,6 +195,8 @@ Module.register("MMM-NOAAV4", {
 	getDomLight () {
 		const w = document.createElement("div");
 		w.className = String(this.config.css).toLowerCase() === "dark" ? "nl nl-dark" : "nl";
+		const width = parseInt(this.config.width, 10);
+		if (width > 0) w.style.width = `${width}px`;
 		if (!this.data_) {
 			w.classList.add("nl-loading");
 			w.innerHTML = this.error ? `MMM-NOAAV4: ${this.esc(this.error)}` : "Gathering your weather info..";
