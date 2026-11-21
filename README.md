@@ -2,7 +2,8 @@
 
 Weather for [MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror) on a clean weather card:
 current conditions, today's high and low, a 3-day forecast, humidity, wind, air quality (AQI),
-UV index, and US National Weather Service alerts. Comes in **white** and **dark**.
+UV index, sunrise and sunset with a live countdown to sunset, and US National Weather Service
+alerts. Comes in **white** and **dark**.
 
 - Works with current MagicMirror² (2.3x) on Node.js 22 or newer
 - No API key needed by default
@@ -16,7 +17,8 @@ UV index, and US National Weather Service alerts. Comes in **white** and **dark*
 | ![White card](examples/light.png) | ![Dark card](examples/dark.png) |
 
 Top row: current condition, your location name, the temperature, and today's high and low.
-Middle: the next 3 days. Bottom: humidity, wind speed and direction, air quality and UV index.
+Middle: the next 3 days. Below that: humidity, wind speed and direction, air quality and UV index.
+Then the sun row: sunrise, a live countdown to sunset, and sunset (see [Sun row](#sun-row)).
 Any active weather alert shows as a strip at the very bottom.
 
 ---
@@ -31,6 +33,7 @@ Any active weather alert shows as a strip at the very bottom.
 - [Configuration options](#configuration-options)
 - [°F or °C, and 12- or 24-hour time](#f-or-c-and-12--or-24-hour-time)
 - [Weather providers](#weather-providers)
+- [Sun row](#sun-row)
 - [White or dark](#white-or-dark)
 - [Custom CSS](#custom-css)
 - [Mouseover](#mouseover)
@@ -38,7 +41,7 @@ Any active weather alert shows as a strip at the very bottom.
 - [Upgrading from MMM-NOAA3](#upgrading-from-mmm-noaa3)
 - [Troubleshooting](#troubleshooting)
 - [Running the tests](#running-the-tests)
-- [What changed in v4](#what-changed-in-v4)
+- [What changed in v4.2](#what-changed-in-v42) · [v4.1](#what-changed-in-v41) · [v4](#what-changed-in-v4)
 
 ---
 
@@ -105,6 +108,7 @@ A fuller example:
     css: "dark",              // "light" (white, default) or "dark"
     title: "Home Weather",    // name under the condition
     forecastDays: 3,          // 0 to 5
+    sun: true,                // sunrise, countdown to sunset, sunset
     alerts: true,             // show NWS weather alerts
     updateInterval: 30 * 60 * 1000
   }
@@ -156,7 +160,8 @@ wrong, the error appears on the mirror in plain words, and also in the terminal 
 | `css` | `"light"` | `"light"` for the white card or `"dark"` for the dark card. See [White or dark](#white-or-dark). |
 | `title` | `"Home"` | The name shown under the condition, e.g. `"Home Weather"` or your town. |
 | `forecastDays` | `3` | How many days in the forecast row, `0` to `5`. With `0` the card is just the top row, and it shows humidity under the temperature instead of today's high and low. |
-| `details` | `true` | The bottom row with humidity, wind, AQI and UV index. `false` hides it. |
+| `details` | `true` | The row with humidity, wind, AQI and UV index. `false` hides it. |
+| `sun` | `true` | The sun row: sunrise, a live countdown to sunset (or **Night** after dark), and sunset. `false` hides it. See [Sun row](#sun-row). |
 | `alerts` | `true` | Show active US National Weather Service alerts for your location. |
 | `updateInterval` | `30 * 60 * 1000` | How often to fetch new weather, in milliseconds. The minimum is 10 minutes. |
 | `rotateInterval` | `60 * 1000` | How long each alert stays on screen when there are several. |
@@ -176,12 +181,12 @@ Both are set at the top of `~/MagicMirror/config/config.js`, and they apply to t
 ```js
 const config = {
   ...
-  timeFormat: 12,        // 12 = 4:42  |  24 = 16:42
+  timeFormat: 12,        // 12 = 4:42 PM  |  24 = 16:42
   units: "imperial",     // "imperial" = °F  |  "metric" = °C
   ...
 ```
 
-- **`timeFormat`** controls the clock on your mirror.
+- **`timeFormat`** controls the clock on your mirror, and the sunrise and sunset times on this card.
 - **`units`** is the default for every module. To give *only* this module different units, add
   `units` to its own `config` block:
 
@@ -211,7 +216,8 @@ number at the end of the address is what goes in `zip`, e.g. `.../weather-foreca
 `zip: "330275"`.
 
 **These are the same for every provider:**
-- Sunrise, sunset (used to pick day or night icons) and UV come from Open-Meteo, with no key needed.
+- Sunrise, sunset (used for the sun row and to pick day or night icons) and UV come from Open-Meteo,
+  with no key needed.
 - AQI is the US AQI from the Open-Meteo air-quality API, with no key needed.
 - Alerts come from the National Weather Service (US only). Pirate Weather uses its own alerts instead.
 
@@ -238,6 +244,27 @@ config: { provider: "accuweather", apiKey: "YOUR_KEY", zip: "330275", lat: 42.09
 
 ---
 
+## Sun row
+
+The row under humidity, wind, AQI and UV:
+
+| Left | Middle | Right |
+|:---:|:---:|:---:|
+| ↑ **Sunrise** time | ⏳ **Day left**: a live countdown to sunset, ticking every second, e.g. `4:12:09` | ↓ **Sunset** time |
+
+- The countdown is hours, minutes and seconds until sunset.
+- When it reaches `0:00:00`, the hourglass changes to a 🌙 moon and the middle says **Night**. It
+  stays on Night until sunrise, then the countdown starts again.
+- Before sunrise it also shows **Night**.
+- Times use the `timeFormat` (12 or 24 hour) at the top of your `config.js`.
+- Only the countdown text changes each second, so the rest of the card doesn't flicker.
+- Turn the row off with `sun: false`.
+
+> Just after midnight, the sunrise and sunset times can still be the day before's until the next
+> weather update (up to `updateInterval`, 30 minutes by default). The middle shows Night either way.
+
+---
+
 ## White or dark
 
 Pick the card with `css:`
@@ -249,7 +276,8 @@ Pick the card with `css:`
 
 ![White and dark cards](examples/light-and-dark.png)
 
-Want just the top row, like a small status card? Use `forecastDays: 0` and `details: false`.
+Want just the top row, like a small status card? Use `forecastDays: 0`, `details: false` and
+`sun: false`.
 
 The card only changes the look of this module, not your other modules.
 
@@ -274,7 +302,9 @@ restart or reload the mirror.
 | Today's high / low | `.MMM-NOAAV4 .nl-sub` |
 | Forecast row / one day | `.MMM-NOAAV4 .nl-fc` / `.MMM-NOAAV4 .nl-day` |
 | Forecast day name, icon, high, low | `.nl-dname`, `.nl-dicon`, `.nl-hi`, `.nl-lo` |
-| Bottom details row / one item | `.MMM-NOAAV4 .nl-details` / `.MMM-NOAAV4 .nl-item` |
+| Details row / one item | `.MMM-NOAAV4 .nl-details` / `.MMM-NOAAV4 .nl-item` |
+| Sun row | `.MMM-NOAAV4 .nl-sunrow` |
+| Countdown to sunset / "Night" | `.MMM-NOAAV4 .nl-countdown` / `.MMM-NOAAV4 .nl-night` |
 | Detail label / value | `.MMM-NOAAV4 .nl-ilabel` / `.MMM-NOAAV4 .nl-ivalue` |
 | Alert strip / severe alert | `.MMM-NOAAV4 .nl-alert` / `.MMM-NOAAV4 .nl-alert-severe` |
 
@@ -293,8 +323,11 @@ restart or reload the mirror.
 /* Square corners and no shadow */
 .MMM-NOAAV4 .nl { border-radius: 0; box-shadow: none; }
 
-/* Hide the AQI and UV items in the bottom row */
-.MMM-NOAAV4 .nl-item:nth-child(3), .MMM-NOAAV4 .nl-item:nth-child(4) { display: none; }
+/* Hide the AQI and UV items in the details row */
+.MMM-NOAAV4 .nl-details .nl-item:nth-child(3), .MMM-NOAAV4 .nl-details .nl-item:nth-child(4) { display: none; }
+
+/* Orange countdown to sunset */
+.MMM-NOAAV4 .nl-countdown { color: #fb8c00; }
 
 /* Dim the whole card */
 .MMM-NOAAV4 .nl { opacity: 0.85; }
@@ -370,6 +403,8 @@ providers are switched over automatically.
 | Times in the wrong format | Set `timeFormat: 12` or `24` at the top of `config.js`. Then restart. |
 | No alerts showing | Alerts come from the US National Weather Service, so they only show for US locations, and only when there's an active alert. |
 | AQI shows `--` | Air-quality data isn't available for every location. |
+| No sun row | Check that `sun` isn't set to `false`. If sunrise and sunset can't be fetched, the row is left out; look for `[MMM-NOAAV4] could not get sun/UV` in the terminal. |
+| Sunrise / sunset in the wrong format | Set `timeFormat: 12` or `24` at the top of `config.js`. Then restart. |
 | Config changes don't show up | MagicMirror only reads `config.js` at startup. Restart it. |
 | `node: bad option: --run` | Your Node.js is older than 22. Update Node, then run `node --run install-mm` in `~/MagicMirror`. |
 | `Failed to connect to Wayland display` | Your desktop uses X11. Start with `node --run start:x11` instead. |
@@ -384,6 +419,13 @@ npm test
 ```
 
 ---
+
+## What changed in v4.2
+
+- **Sun row is back:** sunrise and sunset times at the bottom of the card.
+- **Live countdown to sunset** with seconds, between sunrise and sunset. At sunset it switches to
+  **Night** with a moon icon, and back to the countdown at sunrise.
+- **New option:** `sun` (`false` hides the row).
 
 ## What changed in v4.1
 

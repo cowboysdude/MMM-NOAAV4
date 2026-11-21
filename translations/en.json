@@ -48,5 +48,9 @@
   "Very Unhealthy": "Very Unhealthy",
   "Low": "Low",
   "High": "High",
-  "Very High": "Very High"
+  "Very High": "Very High",
+  "Sunrise": "Sunrise",
+  "Sunset": "Sunset",
+  "Daylight": "Daylight",
+  "Day left": "Day left"
 }

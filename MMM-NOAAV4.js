@@ -1,5 +1,5 @@
 /* MagicMirror²
- * Module: MMM-NOAAV4 (v4.1 - white or dark weather card, MagicMirror 2.3x / Node 22+)
+ * Module: MMM-NOAAV4 (v4.2 - white or dark weather card, MagicMirror 2.3x / Node 22+)
  * By cowboysdude with HUGE thanks to JimL at https://www.phphelp.com!!
  */
 Module.register("MMM-NOAAV4", {
@@ -13,6 +13,7 @@ Module.register("MMM-NOAAV4", {
 		title: "Home",              // name under the condition, e.g. "Home Weather"
 		forecastDays: 3,            // days in the forecast row: 0 (none) to 5
 		details: true,              // row with humidity, wind, AQI and UV Index
+		sun: true,                  // row with sunrise, daylight (and time left) and sunset
 		units: "",                  // "" = use the units at the top of config.js
 		alerts: true,               // show US National Weather Service alerts
 		updateInterval: 30 * 60 * 1000,
@@ -99,6 +100,37 @@ Module.register("MMM-NOAAV4", {
 	esc (s) {
 		return String(s === null || s === undefined ? "" : s)
 			.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+	},
+
+	// "4:12:09" style countdown (hours:minutes:seconds)
+	countdown (ms) {
+		const s = Math.max(0, Math.floor(ms / 1000));
+		const h = Math.floor(s / 3600);
+		const m = Math.floor((s % 3600) / 60);
+		return `${h}:${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+	},
+
+	// Ticks every second: updates the sunset countdown in place, and redraws
+	// the card when the sun sets (switch to Night) or rises again.
+	startSunTicker () {
+		if (this.sunTimer) return;
+		this.sunTimer = setInterval(() => {
+			const st = this.sunState;
+			if (!st) return;
+			const now = Date.now();
+			if (st.daytime) {
+				const left = st.sunset - now;
+				if (left <= 0) {
+					this.updateDom(0);
+					return;
+				}
+				const wrap = document.getElementById(this.identifier);
+				const el = wrap && wrap.querySelector(".nl-countdown");
+				if (el) el.textContent = this.countdown(left);
+			} else if (now >= st.sunrise && now < st.sunset) {
+				this.updateDom(0);
+			}
+		}, 1000);
 	},
 
 	// ------------------------------------------------------------ DOM
@@ -233,6 +265,35 @@ Module.register("MMM-NOAAV4", {
 				${item("fa-sun", "#f9a825", this.translate("UV Index"), uvN === null ? "--" : String(uvN), uvText)}
 			</div>`;
 		}
+
+		// sun row: sunrise | countdown to sunset (or Night) | sunset
+		this.sunState = null;
+		if (this.config.sun !== false && d.sun && d.sun.sunrise && d.sun.sunset) {
+			const fmtT = config.timeFormat === 24 ? "HH:mm" : "h:mm A";
+			const rise = moment(d.sun.sunrise);
+			const set = moment(d.sun.sunset);
+			const riseMs = Date.parse(d.sun.sunrise);
+			const setMs = Date.parse(d.sun.sunset);
+			const now = Date.now();
+			const daytime = now >= riseMs && now < setMs;
+			this.sunState = { daytime, sunset: setMs, sunrise: riseMs };
+			const cell = (icon, color, label, value, valueClass = "") => `<div class="nl-item">
+				<div class="nl-ilabel"><i class="fa-solid ${icon}" style="color:${color}"></i> ${label}</div>
+				<div class="nl-ivalue ${valueClass}">${value}</div>
+			</div>`;
+			const middle = daytime
+				? cell("fa-hourglass-half", "#fb8c00", this.translate("Day left"), this.countdown(setMs - now), "nl-countdown")
+				: `<div class="nl-item">
+					<div class="nl-ilabel"><i class="fa-solid fa-moon" style="color:#b0bec5"></i></div>
+					<div class="nl-ivalue nl-night">${this.translate("Night")}</div>
+				</div>`;
+			html += `<div class="nl-sunrow">
+				${cell("fa-arrow-up", "#f9a825", this.translate("Sunrise"), rise.format(fmtT))}
+				${middle}
+				${cell("fa-arrow-down", "#ef6c00", this.translate("Sunset"), set.format(fmtT))}
+			</div>`;
+		}
+		this.startSunTicker();
 
 		const alerts = d.alerts || [];
 		if (alerts.length) {

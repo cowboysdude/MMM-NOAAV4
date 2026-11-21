@@ -170,3 +170,31 @@ test("text from the weather service is escaped", () => {
 	m.socketNotificationReceived("NOAA3_DATA", { ...card, current: { ...card.current, desc: "<b>Hot</b>" } });
 	assert.match(m.getDom().outerHTML, /&lt;b&gt;Hot&lt;\/b&gt;/);
 });
+
+test("daytime: sun row shows sunrise, a seconds countdown to sunset, and sunset", () => {
+	const m = load({ units: "imperial", timeFormat: 24 }, {});
+	m.socketNotificationReceived("NOAA3_DATA", card);
+	const html = m.getDom().outerHTML;
+	assert.match(html, /class="nl-sunrow"/);
+	assert.match(html, /fa-arrow-up.*Sunrise/s);
+	assert.match(html, /fa-hourglass-half.*Day left<\/div>\s*<div class="nl-ivalue nl-countdown">0:59:\d\d/s, "sunset is 1 hour away");
+	assert.match(html, /fa-arrow-down.*Sunset/s);
+	assert.doesNotMatch(html, /nl-night/);
+});
+
+test("after sunset (or before sunrise) the middle cell says Night with a moon", () => {
+	const m = load({ units: "imperial", timeFormat: 24 }, {});
+	const after = { ...card, sun: { sunrise: new Date(now - 7200e3).toISOString(), sunset: new Date(now - 60e3).toISOString() } };
+	m.socketNotificationReceived("NOAA3_DATA", after);
+	const html = m.getDom().outerHTML;
+	assert.match(html, /fa-moon.*nl-ivalue nl-night">Night/s);
+	assert.doesNotMatch(html, /hourglass|nl-countdown/);
+});
+
+test("sun: false hides the sun row; countdown formats h:mm:ss", () => {
+	const m = load({ units: "imperial" }, { sun: false });
+	m.socketNotificationReceived("NOAA3_DATA", card);
+	assert.doesNotMatch(m.getDom().outerHTML, /nl-sunrow/);
+	assert.equal(m.countdown((4 * 3600 + 12 * 60 + 9) * 1000), "4:12:09");
+	assert.equal(m.countdown(-5000), "0:00:00");
+});
