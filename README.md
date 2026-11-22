@@ -5,6 +5,8 @@ current conditions, today's high and low, a 3-day forecast, humidity, wind, air 
 UV index, sunrise and sunset with a live countdown to sunset, and US National Weather Service
 alerts. Comes in **white** and **dark**.
 
+> **Home Assistant:** this same card is available as a Home Assistant dashboard card. See [homeassistant/](homeassistant/README.md).
+
 - Works with current MagicMirror² (2.3x) on Node.js 22 or newer
 - No API key needed by default
 - No npm packages to install
