@@ -6,7 +6,7 @@
  * your home location (sunrise, sunset, countdown to sunset), and optional AQI and
  * weather-alert sensors.
  */
-const NOAAV4_VERSION = "1.1.0";
+const NOAAV4_VERSION = "1.2.0";
 
 const CONDITION_ICON = {
 	"clear-night": "clear", sunny: "clear", partlycloudy: "partlycloudy", cloudy: "cloudy",
@@ -49,6 +49,17 @@ const CARD_CSS = `
 	--nl-muted: var(--secondary-text-color); --nl-muted2: var(--secondary-text-color);
 	--nl-line: var(--divider-color, #e6e6e6); --nl-strong: var(--primary-text-color);
 }
+.nl.nl-glass {
+	background: rgba(255,255,255,0.05);
+	-webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+	border: 1px solid rgba(255,255,255,0.08);
+	border-radius: 20px;
+	box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+	color: #fff;
+	--nl-muted: #9fb3c8; --nl-muted2: #8aa0b8; --nl-line: rgba(255,255,255,0.08); --nl-strong: #fff;
+}
+.nl-glass .nl-alert { background: rgba(255,167,38,0.15); color: #ffcc80; }
+.nl-glass .nl-alert-severe { background: rgba(239,83,80,0.2); color: #ef9a9a; }
 .nl-msg { font-size: 16px; color: var(--nl-muted); }
 .nl-head { display: flex; align-items: center; gap: 14px; }
 .nl-icon { flex: 0 0 66px; height: 66px; }
@@ -96,7 +107,7 @@ class NOAAV4Card extends HTMLElement {
 				{ name: "entity", required: true, selector: { entity: { domain: "weather" } } },
 				{ name: "title", selector: { text: {} } },
 				{ name: "css", selector: { select: { mode: "dropdown", options: [
-					{ value: "light", label: "White card" }, { value: "dark", label: "Dark card" }, { value: "theme", label: "Follow my theme" }] } } },
+					{ value: "light", label: "White card" }, { value: "dark", label: "Dark card" }, { value: "theme", label: "Follow my theme" }, { value: "glass", label: "Frosted glass" }] } } },
 				{ name: "forecast_days", selector: { number: { min: 0, max: 5, mode: "box" } } },
 				{ name: "details", selector: { boolean: {} } },
 				{ name: "sun", selector: { boolean: {} } },
@@ -387,7 +398,7 @@ class NOAAV4Card extends HTMLElement {
 		if (!this.shadowRoot) this.attachShadow({ mode: "open" });
 
 		const look = String(cfg.css || "light").toLowerCase();
-		const cls = look === "dark" ? "nl nl-dark" : look === "theme" ? "nl nl-theme" : "nl";
+		const cls = look === "dark" ? "nl nl-dark" : look === "theme" ? "nl nl-theme" : look === "glass" ? "nl nl-glass" : "nl";
 		const st = hass.states[cfg.entity];
 		let html;
 

@@ -9,7 +9,7 @@ The [MMM-NOAAV4](https://github.com/cowboysdude/MMM-NOAAV4) MagicMirror weather 
 - Humidity, wind with direction, air quality (AQI) and UV index. At sunset the UV spot switches to tonight's **moon phase**, and back to UV at sunrise.
 - Sunrise, sunset, and a **live countdown to sunset** (hours:minutes:seconds). After sunset it switches to **Night** with a moon, and back to the countdown at sunrise.
 - Weather alerts, if you have an alerts sensor
-- Comes in **white**, **dark**, or **following your Home Assistant theme**
+- Comes in **white**, **dark**, **frosted glass**, or **following your Home Assistant theme**
 
 It uses Home Assistant's own data, so it works with whatever weather integration you already have (National Weather Service, Open-Meteo, Met.no, OpenWeatherMap, and others). No API keys.
 
@@ -48,7 +48,7 @@ css: light
 | Option | Default | What it does |
 |---|---|---|
 | `entity` | *(required)* | Your weather entity, e.g. `weather.home` or `weather.kxyz_daynight`. |
-| `css` | `light` | `light` = white card, `dark` = dark card, `theme` = follow your Home Assistant theme. |
+| `css` | `light` | `light` = white card, `dark` = dark card, `glass` = frosted glass (see-through with a blur, for dark backgrounds), `theme` = follow your Home Assistant theme. |
 | `title` | your home's name | Text under the condition, e.g. `Home Weather`. |
 | `forecast_days` | `3` | Days in the forecast row: `0` (none) to `5`. |
 | `details` | `true` | The humidity / wind / AQI / UV row. |
