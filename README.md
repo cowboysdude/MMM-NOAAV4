@@ -432,6 +432,7 @@ npm test
 - **Live countdown to sunset** with seconds, between sunrise and sunset. At sunset it switches to
   **Night** with a moon icon, and back to the countdown at sunrise.
 - **New option:** `sun` (`false` hides the row).
+- **Moon phase at night:** at sunset the UV Index spot switches to tonight's moon phase (a small drawing, the phase name and how much is lit), and back to UV at sunrise.
 - **Narrower card:** 330 px wide by default (was 380). **New option:** `width` to set your own.
 - **Fixed:** sunrise, sunset and the day/night check used *yesterday's* times, so the card (and
   [MMM-WeatherBackgroundV4](https://github.com/cowboysdude/MMM-WeatherBackgroundV4)) showed night
