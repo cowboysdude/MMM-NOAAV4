@@ -138,6 +138,24 @@
 	color: #8a8a8a;
 }
 
+/* moon phase (shown in place of UV at night) */
+.MMM-NOAAV4 .nl-moonsvg {
+	width: 15px;
+	height: 15px;
+	vertical-align: -3px;
+}
+
+.MMM-NOAAV4 .nl-moonname {
+	font-size: 13px;
+	white-space: normal;
+	line-height: 1.15;
+}
+
+.MMM-NOAAV4 .nl-moon .nl-iextra {
+	display: block;
+	margin-top: 1px;
+}
+
 /* sun row sits right under the details row */
 .MMM-NOAAV4 .nl-details + .nl-sunrow {
 	margin-top: 12px;

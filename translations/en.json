@@ -52,5 +52,14 @@
   "Sunrise": "Sunrise",
   "Sunset": "Sunset",
   "Daylight": "Daylight",
-  "Day left": "Day left"
+  "Day left": "Day left",
+  "Moon": "Moon",
+  "New Moon": "New Moon",
+  "Waxing Crescent": "Waxing Crescent",
+  "First Quarter": "First Quarter",
+  "Waxing Gibbous": "Waxing Gibbous",
+  "Full Moon": "Full Moon",
+  "Waning Gibbous": "Waning Gibbous",
+  "Last Quarter": "Last Quarter",
+  "Waning Crescent": "Waning Crescent"
 }

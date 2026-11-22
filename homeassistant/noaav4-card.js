@@ -6,7 +6,7 @@
  * your home location (sunrise, sunset, countdown to sunset), and optional AQI and
  * weather-alert sensors.
  */
-const NOAAV4_VERSION = "1.0.0";
+const NOAAV4_VERSION = "1.1.0";
 
 const CONDITION_ICON = {
 	"clear-night": "clear", sunny: "clear", partlycloudy: "partlycloudy", cloudy: "cloudy",
@@ -73,6 +73,9 @@ const CARD_CSS = `
 .nl-ivalue { font-size: 16px; color: var(--nl-strong); white-space: nowrap; }
 .nl-iextra { font-size: 12px; color: var(--nl-muted2); }
 .nl-countdown { font-variant-numeric: tabular-nums; }
+.nl-moonsvg { width: 15px; height: 15px; }
+.nl-moonname { font-size: 13px; white-space: normal; line-height: 1.15; }
+.nl-moon .nl-iextra { display: block; margin-top: 1px; }
 .nl-alert { margin-top: 14px; padding: 6px 10px; border-radius: 4px; background: #fff4e5; color: #b26a00; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
 .nl-alert ha-icon { --mdc-icon-size: 18px; }
 .nl-alert-severe { background: #fdecea; color: #c62828; }
@@ -306,6 +309,32 @@ class NOAAV4Card extends HTMLElement {
 		return local || CONDITION_TEXT[state] || state;
 	}
 
+	// moon phase from the date (no internet needed); shown in place of UV at night
+	_moonPhase (date) {
+		const synodic = 29.530588853;
+		const jd = date.getTime() / 86400000 + 2440587.5;
+		const age = (((jd - 2451550.1) % synodic) + synodic) % synodic;   // days since new moon
+		const frac = age / synodic;                                       // 0 = new, 0.5 = full
+		const illum = Math.round((1 - Math.cos(2 * Math.PI * frac)) / 2 * 100);
+		const names = ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"];
+		const name = names[Math.floor((age / synodic) * 8 + 0.5) % 8];
+		return { frac, illum, name, age };
+	}
+
+	// small moon drawing: lit part on the right while waxing, on the left while waning
+	_moonSvg (frac, cls) {
+		const r = 10, cx = 12, top = 2, bottom = 22;
+		const k = Math.abs(Math.cos(2 * Math.PI * frac)) * r;
+		const waxing = frac < 0.5;
+		const crescent = frac < 0.25 || frac > 0.75;
+		const outer = waxing ? 1 : 0;
+		const inner = crescent ? (waxing ? 0 : 1) : (waxing ? 1 : 0);
+		const lit = frac < 0.02 || frac > 0.98 ? "" :
+			Math.abs(frac - 0.5) < 0.02 ? `<circle cx="${cx}" cy="12" r="${r}" fill="#fff3c4"/>` :
+			`<path d="M${cx} ${top}A${r} ${r} 0 0 ${outer} ${cx} ${bottom}A${k.toFixed(2)} ${r} 0 0 ${inner} ${cx} ${top}z" fill="#fff3c4"/>`;
+		return `<svg class="${cls}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="${cx}" cy="12" r="${r}" fill="#607d8b"/>${lit}<circle cx="${cx}" cy="12" r="${r}" fill="none" stroke="#90a4ae" stroke-width="1"/></svg>`;
+	}
+
 	// Flat weather icons (same drawings as MMM-NOAAV4)
 	_icon (name, night) {
 		const n = String(name || "unknown");
@@ -338,6 +367,15 @@ class NOAAV4Card extends HTMLElement {
 		return `<div class="nl-item">
 			<div class="nl-ilabel">${icon ? `<ha-icon icon="${icon}" style="color:${color}"></ha-icon>` : ""}${label}</div>
 			<div class="nl-ivalue ${valueClass}">${value}${extra ? ` <span class="nl-iextra">${extra}</span>` : ""}</div>
+		</div>`;
+	}
+
+	_moonItem () {
+		const m = this._moonPhase(new Date());
+		return `<div class="nl-item nl-moon" title="${this._esc(m.name)}, ${m.illum}%">
+			<div class="nl-ilabel">${this._moonSvg(m.frac, "nl-moonsvg")}Moon</div>
+			<div class="nl-ivalue nl-moonname">${this._esc(m.name)}</div>
+			<div class="nl-iextra">${m.illum}% lit</div>
 		</div>`;
 	}
 
@@ -426,7 +464,7 @@ class NOAAV4Card extends HTMLElement {
 				${this._item("mdi:water-percent", "#42a5f5", "Humidity", hum)}
 				${this._item("mdi:weather-windy", "#78909c", "Wind", wind, windDir)}
 				${this._item("mdi:leaf", "#43a047", "AQI", aqiN === null ? "--" : String(aqiN), aqiN === null ? "" : this._aqiText(aqiN))}
-				${this._item("mdi:white-balance-sunny", "#f9a825", "UV Index", uvN === null ? "--" : String(uvN), uvN === null ? "" : this._uvText(uvN))}
+				${day ? this._item("mdi:white-balance-sunny", "#f9a825", "UV Index", uvN === null ? "--" : String(uvN), uvN === null ? "" : this._uvText(uvN)) : this._moonItem()}
 			</div>`;
 		}
 

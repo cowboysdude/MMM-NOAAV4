@@ -6,7 +6,7 @@ The [MMM-NOAAV4](https://github.com/cowboysdude/MMM-NOAAV4) MagicMirror weather 
 
 - Current conditions with flat weather icons, the temperature, and today's high / low
 - A 3-day forecast (0 to 5 days)
-- Humidity, wind with direction, air quality (AQI) and UV index
+- Humidity, wind with direction, air quality (AQI) and UV index. At sunset the UV spot switches to tonight's **moon phase**, and back to UV at sunrise.
 - Sunrise, sunset, and a **live countdown to sunset** (hours:minutes:seconds). After sunset it switches to **Night** with a moon, and back to the countdown at sunrise.
 - Weather alerts, if you have an alerts sensor
 - Comes in **white**, **dark**, or **following your Home Assistant theme**

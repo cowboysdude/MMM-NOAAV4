@@ -207,3 +207,25 @@ test("card is 330px wide by default; width option changes it", () => {
 	b.socketNotificationReceived("NOAA3_DATA", card);
 	assert.equal(b.getDom().style.width, "300px");
 });
+
+test("UV Index by day, moon phase in its place at night", () => {
+	const day = load({ units: "imperial", timeFormat: 24 }, {});
+	day.socketNotificationReceived("NOAA3_DATA", card);
+	const dh = day.getDom().outerHTML;
+	assert.match(dh, /UV Index/);
+	assert.doesNotMatch(dh, /nl-moon/);
+
+	const night = load({ units: "imperial", timeFormat: 24 }, {});
+	night.socketNotificationReceived("NOAA3_DATA", { ...card, sun: { sunrise: new Date(now - 7200e3).toISOString(), sunset: new Date(now - 60e3).toISOString() } });
+	const nh = night.getDom().outerHTML;
+	assert.doesNotMatch(nh, /UV Index/);
+	assert.match(nh, /nl-moon.*<svg class="nl-moonsvg".*(New Moon|Crescent|Quarter|Gibbous|Full Moon).*\d+% lit/s);
+});
+
+test("moon phase matches known 2026 dates", () => {
+	const m = load({ units: "imperial" }, {});
+	assert.equal(m.moonPhase(new Date("2026-11-09T07:02:00Z")).name, "New Moon");
+	assert.equal(m.moonPhase(new Date("2026-11-17T11:48:00Z")).name, "First Quarter");
+	assert.equal(m.moonPhase(new Date("2026-11-24T14:53:00Z")).name, "Full Moon");
+	assert.equal(m.moonPhase(new Date("2026-11-24T14:53:00Z")).illum, 100);
+});

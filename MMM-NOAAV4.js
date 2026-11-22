@@ -161,6 +161,32 @@ Module.register("MMM-NOAAV4", {
 		return "veryhigh";
 	},
 
+	// moon phase from the date (no internet needed); shown in place of UV at night
+	moonPhase (date) {
+		const synodic = 29.530588853;
+		const jd = date.getTime() / 86400000 + 2440587.5;
+		const age = (((jd - 2451550.1) % synodic) + synodic) % synodic;   // days since new moon
+		const frac = age / synodic;                                       // 0 = new, 0.5 = full
+		const illum = Math.round((1 - Math.cos(2 * Math.PI * frac)) / 2 * 100);
+		const names = ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous", "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"];
+		const name = names[Math.floor((age / synodic) * 8 + 0.5) % 8];
+		return { frac, illum, name, age };
+	},
+
+	// small moon drawing: lit part on the right while waxing, on the left while waning
+	moonSvg (frac, cls) {
+		const r = 10, cx = 12, top = 2, bottom = 22;
+		const k = Math.abs(Math.cos(2 * Math.PI * frac)) * r;
+		const waxing = frac < 0.5;
+		const crescent = frac < 0.25 || frac > 0.75;
+		const outer = waxing ? 1 : 0;
+		const inner = crescent ? (waxing ? 0 : 1) : (waxing ? 1 : 0);
+		const lit = frac < 0.02 || frac > 0.98 ? "" :
+			Math.abs(frac - 0.5) < 0.02 ? `<circle cx="${cx}" cy="12" r="${r}" fill="#fff3c4"/>` :
+			`<path d="M${cx} ${top}A${r} ${r} 0 0 ${outer} ${cx} ${bottom}A${k.toFixed(2)} ${r} 0 0 ${inner} ${cx} ${top}z" fill="#fff3c4"/>`;
+		return `<svg class="${cls}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="${cx}" cy="12" r="${r}" fill="#607d8b"/>${lit}<circle cx="${cx}" cy="12" r="${r}" fill="none" stroke="#90a4ae" stroke-width="1"/></svg>`;
+	},
+
 	// Flat weather icons, drawn in SVG so they stay sharp at any size
 	flatIcon (name, night) {
 		const n = String(name || "unknown").replace(/^nt_/, "");
@@ -189,6 +215,16 @@ Module.register("MMM-NOAAV4", {
 			wind: windLines, breezy: windLines
 		}[n] || lightCloud;
 		return `<svg class="nl-svg" viewBox="0 0 48 50" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+	},
+
+	// night: moon phase in the UV spot
+	moonItem () {
+		const m = this.moonPhase(new Date());
+		return `<div class="nl-item nl-moon" title="${this.esc(this.translate(m.name))}, ${m.illum}%">
+			<div class="nl-ilabel">${this.moonSvg(m.frac, "nl-moonsvg")} ${this.translate("Moon")}</div>
+			<div class="nl-ivalue nl-moonname">${this.esc(this.translate(m.name))}</div>
+			<div class="nl-iextra">${m.illum}% lit</div>
+		</div>`;
 	},
 
 	// The card: white (css: "light", default) or dark (css: "dark"), like the Home Assistant weather card
@@ -265,7 +301,7 @@ Module.register("MMM-NOAAV4", {
 				${item("fa-droplet", "#42a5f5", this.translate("Humidity"), hum)}
 				${item("fa-wind", "#78909c", this.translate("Wind"), wind, windDir)}
 				${item("fa-leaf", "#43a047", "AQI", aqi, aqiText)}
-				${item("fa-sun", "#f9a825", this.translate("UV Index"), uvN === null ? "--" : String(uvN), uvText)}
+				${day ? item("fa-sun", "#f9a825", this.translate("UV Index"), uvN === null ? "--" : String(uvN), uvText) : this.moonItem()}
 			</div>`;
 		}
 
